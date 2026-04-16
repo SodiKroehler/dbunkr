@@ -76,6 +76,12 @@ export interface PotRecord {
   updated_at: string;
 }
 
+/** Row id=1: site contributions (mutable). Row id=2: research contributions (read-only here). */
+export interface PotState {
+  site: PotRecord | null;
+  research: PotRecord | null;
+}
+
 export interface BidRecord {
   id: string;
   stub_id: string;
@@ -129,7 +135,8 @@ export interface DataProvider {
     type: string,
     content: string,
   ): Promise<StreamMessageRecord>;
-  getPot(): Promise<PotRecord | null>;
+  getPotState(): Promise<PotState>;
+  chargeSitePotFromMessage(message: string): Promise<PotRecord | null>;
   listBidsByStubId(stubId: string): Promise<BidRecord[]>;
   createBid(input: CreateBidInput): Promise<BidRecord>;
   applyBidVote(bidId: string, direction: BidVoteDirection): Promise<BidRecord | null>;

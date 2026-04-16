@@ -1,12 +1,14 @@
 import { streamText } from "ai";
 import { NextResponse } from "next/server";
 import {
+  chargeSitePotFromMessage,
   createStreamMessage,
-  getPot,
+  getPotState,
   getStreamBySlug,
   getStubBySlug,
   listStreamMessages,
 } from "@/lib/data/provider";
+import { sitePotCostFromMessage } from "@/lib/pot/site-cost";
 import {
   clean_stream_message,
   postprocess,
@@ -93,20 +95,26 @@ export async function POST(
     canonCount: stream.canon.length,
   });
 
-  const pot = await getPot();
+  const { site } = await getPotState();
+  const siteCost = sitePotCostFromMessage(incoming);
   debugLog("Fetched pot state", {
-    potFound: Boolean(pot),
-    tokensRemaining: pot?.tokens_remaining ?? null,
+    potFound: Boolean(site),
+    tokensRemaining: site?.tokens_remaining ?? null,
+    siteCost,
   });
-  if (!pot || pot.tokens_remaining <= 0) {
+  if (!site || site.tokens_remaining < siteCost) {
     debugLog("Declining request: insufficient pot tokens", {
-      tokensRemaining: pot?.tokens_remaining ?? null,
+      tokensRemaining: site?.tokens_remaining ?? null,
+      siteCost,
     });
     return NextResponse.json(
       { error: "insufficient pot tokens remaining" },
       { status: 402 },
     );
   }
+
+  await chargeSitePotFromMessage(incoming);
+  debugLog("Charged site pot for message", { siteCost });
 
   const cleanedMessage = incoming;
   debugLog("Message cleaned", {

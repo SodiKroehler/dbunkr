@@ -1,12 +1,14 @@
 import { streamText } from "ai";
 import { NextResponse } from "next/server";
 import {
+  chargeSitePotFromMessage,
   createStreamMessage,
-  getPot,
+  getPotState,
   getStubBySlug,
   listStreamMessages,
   listStreamsBySlug,
 } from "@/lib/data/provider";
+import { sitePotCostFromMessage } from "@/lib/pot/site-cost";
 import { match } from "@/lib/match";
 import { getLlmModel, type LlmName } from "@/lib/llm/provider";
 import { build_stream_system_prompt } from "@/lib/prompts";
@@ -34,13 +36,16 @@ export async function POST(
     return NextResponse.json({ error: "stub not found" }, { status: 404 });
   }
 
-  const pot = await getPot();
-  if (!pot || pot.tokens_remaining <= 0) {
+  const { site } = await getPotState();
+  const siteCost = sitePotCostFromMessage(incoming);
+  if (!site || site.tokens_remaining < siteCost) {
     return NextResponse.json(
       { error: "insufficient pot tokens remaining" },
       { status: 402 },
     );
   }
+
+  await chargeSitePotFromMessage(incoming);
 
   const streams = await listStreamsBySlug(params.slug);
   if (streams.length === 0) {

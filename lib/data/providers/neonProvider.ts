@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { sitePotCostFromMessage } from "@/lib/pot/site-cost";
 import type {
   BidRecord,
   BidVoteDirection,
@@ -8,6 +9,7 @@ import type {
   StreamCanonMessage,
   StreamMessageRecord,
   PotRecord,
+  PotState,
   StreamRecord,
   StreamSearchInput,
   StubRecord,
@@ -674,12 +676,38 @@ export class NeonDataProvider implements DataProvider {
     return mapStreamMessageRow(rows[0]);
   }
 
-  async getPot(): Promise<PotRecord | null> {
+  async getPotState(): Promise<PotState> {
     const rows = (await this.sql`
       SELECT id, tokens_remaining, updated_at
       FROM pot
+      WHERE id IN (1, 2)
+      ORDER BY id ASC;
+    `) as NeonPotRow[];
+
+    let site: PotRecord | null = null;
+    let research: PotRecord | null = null;
+    for (const row of rows) {
+      const mapped = mapPotRow(row);
+      if (mapped.id === 1) site = mapped;
+      if (mapped.id === 2) research = mapped;
+    }
+    return { site, research };
+  }
+
+  async chargeSitePotFromMessage(message: string): Promise<PotRecord | null> {
+    const cost = sitePotCostFromMessage(message);
+    if (cost <= 0) {
+      const state = await this.getPotState();
+      return state.site;
+    }
+
+    const rows = (await this.sql`
+      UPDATE pot
+      SET
+        tokens_remaining = GREATEST(tokens_remaining - ${cost}, 0),
+        updated_at = NOW()
       WHERE id = 1
-      LIMIT 1;
+      RETURNING id, tokens_remaining, updated_at;
     `) as NeonPotRow[];
 
     return rows[0] ? mapPotRow(rows[0]) : null;

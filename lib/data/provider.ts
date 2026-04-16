@@ -95,9 +95,14 @@ export async function createStreamMessage(
   return provider.createStreamMessage(streamId, role, session_id, uname, type, content);
 }
 
-export async function getPot() {
+export async function getPotState() {
   const provider = createDataProvider();
-  return provider.getPot();
+  return provider.getPotState();
+}
+
+export async function chargeSitePotFromMessage(message: string) {
+  const provider = createDataProvider();
+  return provider.chargeSitePotFromMessage(message);
 }
 
 export async function applyStubVoteRecord(stubId: string, voteType: StubVoteType) {

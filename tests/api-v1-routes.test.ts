@@ -32,6 +32,18 @@ async function expectItemResponse(responsePromise: Promise<Response>) {
   assert.equal(body.data, null);
 }
 
+async function expectPotStateResponse(responsePromise: Promise<Response>) {
+  const response = await responsePromise;
+  const body = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.ok("data" in body);
+  const data = body.data as { site?: unknown; research?: unknown };
+  assert.ok(data && typeof data === "object");
+  assert.ok("site" in data);
+  assert.ok("research" in data);
+}
+
 test("GET /api/v1/stubs returns list format", async () => {
   await expectListResponse(stubsRoute.GET());
 });
@@ -134,6 +146,17 @@ test("POST /api/v1/postings/[id]/bids/[bid_id]/vote returns item format", async 
   await expectItemResponse(bidVoteRoute.POST());
 });
 
-test("GET /api/v1/pot returns list format", async () => {
-  await expectListResponse(potRoute.GET());
+test("GET /api/v1/pot returns site and research", async () => {
+  await expectPotStateResponse(potRoute.GET());
+});
+
+test("POST /api/v1/pot requires message", async () => {
+  const response = await potRoute.POST(
+    new Request("http://localhost/api/v1/pot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    }),
+  );
+  assert.equal(response.status, 400);
 });
