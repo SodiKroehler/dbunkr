@@ -144,7 +144,7 @@ export async function POST(
   });
 
   const systemPrompt = clean_stream_message(
-    build_stream_system_prompt(stub, stream.canon),
+    build_stream_system_prompt(stub, stream.canon, cleanedMessage),
   );
   debugLog("Built system prompt", { promptLength: systemPrompt.length });
 

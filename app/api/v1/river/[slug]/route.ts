@@ -72,7 +72,7 @@ export async function POST(
         const result = streamText({
           model: getLlmModel(llm),
           system: clean_stream_message(
-            build_stream_system_prompt(stub, stream.canon),
+            build_stream_system_prompt(stub, stream.canon, cleanedMessage),
           ),
           messages: history,
         });
