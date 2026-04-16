@@ -1,0 +1,4 @@
+/* Scoped vine canvas (from wendell_lib/styles.css — layout only; no global reset). */
+.wendell-vine-host canvas {
+  display: block;
+}
