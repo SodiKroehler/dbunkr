@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Stream } from "@/components/stream";
+import { triggerNovelResearchQuestionProcess } from "@/lib/processes/novel-rq";
 
 type RiverViewProps = {
   slug: string;
@@ -109,6 +110,9 @@ export function RiverView({ slug, className }: RiverViewProps) {
     entries: Array<{ llm: "claude" | "grok"; stream_id: string; response: string }>;
     suggestions: Array<{ slug: string; rq: string }>;
   } | null>(null);
+  const [novelModal, setNovelModal] = useState<{
+    userMessage: string;
+  } | null>(null);
 
   async function onSend() {
     const trimmed = message.trim();
@@ -141,6 +145,11 @@ export function RiverView({ slug, className }: RiverViewProps) {
           setLiveNovelByLlm((prev) => ({ ...prev, [llm]: novel }));
         },
         (payload) => {
+          if (!payload.response.trim()) {
+            setNovelModal({ userMessage: payload.user_message });
+            void triggerNovelResearchQuestionProcess(payload.user_message);
+            return;
+          }
           hadUnrelated = true;
           setUnrelatedModal((prev) => {
             const existingEntries = prev?.entries ?? [];
@@ -270,6 +279,57 @@ export function RiverView({ slug, className }: RiverViewProps) {
           </div>
         </div>
       ) : null}
+
+      {novelModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            {Array.from({ length: 60 }).map((_, idx) => (
+              <span
+                key={`confetti-${idx}`}
+                className="absolute h-2 w-2 rounded-sm opacity-80 animate-[fall_2.8s_linear_infinite]"
+                style={{
+                  left: `${(idx * 17) % 100}%`,
+                  top: "-8px",
+                  backgroundColor: ["#60a5fa", "#f472b6", "#34d399", "#fbbf24"][idx % 4],
+                  animationDelay: `${(idx % 10) * 0.15}s`,
+                }}
+              />
+            ))}
+          </div>
+          <div className="relative w-full max-w-xl rounded-lg bg-white p-6 text-black">
+            <h3 className="text-lg font-semibold">
+              You&apos;ve found a novel research question (for our site).
+            </h3>
+            <p className="mt-3 text-sm text-neutral-700">
+              User request: {novelModal.userMessage}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setNovelModal(null);
+                setLiveUserMessage(null);
+                setLiveAssistantByLlm({ claude: "", grok: "" });
+                setLiveNovelByLlm({ claude: false, grok: false });
+                setRefreshKey((prev) => prev + 1);
+              }}
+              className="mt-5 rounded border border-neutral-300 px-4 py-2 text-sm hover:bg-neutral-100"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <style jsx>{`
+        @keyframes fall {
+          0% {
+            transform: translateY(-12px) rotate(0deg);
+          }
+          100% {
+            transform: translateY(120vh) rotate(540deg);
+          }
+        }
+      `}</style>
     </div>
   );
 }
