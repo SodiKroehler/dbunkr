@@ -46,9 +46,9 @@ type NeonStubRecordRow = {
   slug: string;
   rq: string;
   blurb: string | null;
-  left: number | string;
-  right: number | string;
-  center: number | string;
+  left_truth: number | string;
+  right_truth: number | string;
+  center_truth: number | string;
   status: "seeded" | "proposed" | "approved";
   created_at: string | Date;
 };
@@ -59,9 +59,9 @@ function mapRow(row: NeonStubRecordRow): StubRecord {
     slug: row.slug,
     rq: row.rq,
     blurb: row.blurb,
-    left: Number(row.left),
-    right: Number(row.right),
-    center: Number(row.center),
+    left_truth: Number(row.left_truth),
+    right_truth: Number(row.right_truth),
+    center_truth: Number(row.center_truth),
     status: row.status,
     created_at:
       row.created_at instanceof Date
@@ -178,9 +178,9 @@ export class NeonDataProvider implements DataProvider {
           slug,
           rq,
           blurb,
-          "left",
-          "right",
-          "center",
+          left_truth,
+          right_truth,
+          center_truth,
           status,
           created_at
         FROM stubs
@@ -194,9 +194,9 @@ export class NeonDataProvider implements DataProvider {
           slug,
           rq,
           blurb,
-          0 AS "left",
-          0 AS "right",
-          0 AS "center",
+          0 AS left_truth,
+          0 AS right_truth,
+          0 AS center_truth,
           status,
           created_at
         FROM stubs
@@ -221,9 +221,9 @@ export class NeonDataProvider implements DataProvider {
           slug,
           rq,
           blurb,
-          "left",
-          "right",
-          "center",
+          left_truth,
+          right_truth,
+          center_truth,
           status,
           created_at
         FROM (
@@ -232,9 +232,9 @@ export class NeonDataProvider implements DataProvider {
             slug,
             rq,
             blurb,
-            "left",
-            "right",
-            "center",
+            left_truth,
+            right_truth,
+            center_truth,
             status,
             created_at,
             similarity(rq, ${trimmed}) AS score
@@ -252,9 +252,9 @@ export class NeonDataProvider implements DataProvider {
           slug,
           rq,
           blurb,
-          0 AS "left",
-          0 AS "right",
-          0 AS "center",
+          0 AS left_truth,
+          0 AS right_truth,
+          0 AS center_truth,
           status,
           created_at
         FROM (
@@ -286,9 +286,9 @@ export class NeonDataProvider implements DataProvider {
           slug,
           rq,
           blurb,
-          "left",
-          "right",
-          "center",
+          left_truth,
+          right_truth,
+          center_truth,
           status,
           created_at
         FROM stubs
@@ -303,9 +303,9 @@ export class NeonDataProvider implements DataProvider {
           slug,
           rq,
           blurb,
-          0 AS "left",
-          0 AS "right",
-          0 AS "center",
+          0 AS left_truth,
+          0 AS right_truth,
+          0 AS center_truth,
           status,
           created_at
         FROM stubs
@@ -323,18 +323,18 @@ export class NeonDataProvider implements DataProvider {
         slug,
         rq,
         blurb,
-        "left",
-        "right",
-        "center",
+        left_truth,
+        right_truth,
+        center_truth,
         status
       )
       VALUES (
         ${input.slug},
         ${input.rq},
         ${input.blurb ?? null},
-        ${input.left ?? 0},
-        ${input.right ?? 0},
-        ${input.center ?? 0},
+        ${input.left_truth ?? 0},
+        ${input.right_truth ?? 0},
+        ${input.center_truth ?? 0},
         ${input.status ?? "proposed"}
       )
       RETURNING
@@ -342,9 +342,9 @@ export class NeonDataProvider implements DataProvider {
         slug,
         rq,
         blurb,
-        "left",
-        "right",
-        "center",
+        left_truth,
+        right_truth,
+        center_truth,
         status,
         created_at;
     `) as NeonStubRecordRow[];

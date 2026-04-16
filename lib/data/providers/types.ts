@@ -5,9 +5,9 @@ export interface StubRecord {
   slug: string;
   rq: string;
   blurb: string | null;
-  left: number;
-  right: number;
-  center: number;
+  left_truth: number;
+  right_truth: number;
+  center_truth: number;
   status: "seeded" | "proposed" | "approved";
   created_at: string;
 }
@@ -16,9 +16,9 @@ export interface CreateStubRecordInput {
   slug: string;
   rq: string;
   blurb?: string | null;
-  left?: number;
-  right?: number;
-  center?: number;
+  left_truth?: number;
+  right_truth?: number;
+  center_truth?: number;
   status?: "seeded" | "proposed" | "approved";
 }
 

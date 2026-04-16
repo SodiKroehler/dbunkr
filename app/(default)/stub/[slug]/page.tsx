@@ -16,12 +16,14 @@ export default async function StubPage({
     );
   }
 
-  const overallConfidence = Math.round((stub.left + stub.center + stub.right) / 3);
+  const overallConfidence = Math.round(
+    (stub.left_truth + stub.center_truth + stub.right_truth) / 3,
+  );
 
   return (
-    <main className="min-h-[calc(100vh-72px)] bg-white px-8 py-8">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6">
-        <section className="grid min-h-[33vh] gap-8 lg:grid-cols-[1.8fr_1fr]">
+    <main className="min-h-[calc(100vh-72px)] bg-white px-8 py-6">
+      <div className="mx-auto flex max-w-6xl flex-col gap-4">
+        <section className="grid min-h-[26vh] gap-6 lg:grid-cols-[1.8fr_1fr]">
           <div className="space-y-4">
             <h1 className="text-3xl font-semibold text-neutral-900">{stub.rq}</h1>
             <p className="text-base leading-7 text-neutral-700">{stub.blurb ?? ""}</p>
@@ -52,30 +54,30 @@ export default async function StubPage({
               <div>
                 <div className="mb-1 flex justify-between text-neutral-700">
                   <span>left</span>
-                  <span>{stub.left}</span>
+                  <span>{stub.left_truth}</span>
                 </div>
                 <div className="h-2 w-full rounded bg-neutral-200">
-                  <div className="h-2 rounded bg-blue-500" style={{ width: `${stub.left}%` }} />
+                  <div className="h-2 rounded bg-blue-500" style={{ width: `${stub.left_truth}%` }} />
                 </div>
               </div>
 
               <div>
                 <div className="mb-1 flex justify-between text-neutral-700">
                   <span>center</span>
-                  <span>{stub.center}</span>
+                  <span>{stub.center_truth}</span>
                 </div>
                 <div className="h-2 w-full rounded bg-neutral-200">
-                  <div className="h-2 rounded bg-emerald-500" style={{ width: `${stub.center}%` }} />
+                  <div className="h-2 rounded bg-emerald-500" style={{ width: `${stub.center_truth}%` }} />
                 </div>
               </div>
 
               <div>
                 <div className="mb-1 flex justify-between text-neutral-700">
                   <span>right</span>
-                  <span>{stub.right}</span>
+                  <span>{stub.right_truth}</span>
                 </div>
                 <div className="h-2 w-full rounded bg-neutral-200">
-                  <div className="h-2 rounded bg-red-500" style={{ width: `${stub.right}%` }} />
+                  <div className="h-2 rounded bg-red-500" style={{ width: `${stub.right_truth}%` }} />
                 </div>
               </div>
             </div>
@@ -96,7 +98,7 @@ export default async function StubPage({
           </aside>
         </section>
 
-        <section className="h-[66vh] min-h-[420px]">
+        <section className="h-[58vh] min-h-[320px]">
           <RiverView slug={params.slug} className="h-full" />
         </section>
       </div>

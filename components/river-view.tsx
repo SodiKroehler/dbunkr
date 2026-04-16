@@ -73,13 +73,12 @@ async function sendToRiver(
         evt.type === "unrelated" &&
         evt.llm &&
         evt.stream_id &&
-        evt.response &&
         evt.user_message
       ) {
         onUnrelated({
           llm: evt.llm,
           stream_id: evt.stream_id,
-          response: evt.response,
+          response: evt.response ?? "",
           user_message: evt.user_message,
           suggestions: evt.suggestions ?? [],
         });
@@ -247,14 +246,6 @@ export function RiverView({ slug, className }: RiverViewProps) {
             <p className="mt-3 text-sm">
               <span className="font-semibold">User request:</span> {unrelatedModal.userMessage}
             </p>
-            <div className="mt-4 space-y-3">
-              {unrelatedModal.entries.map((entry) => (
-                <div key={`${entry.llm}-${entry.stream_id}`} className="rounded border border-neutral-200 p-3">
-                  <p className="mb-1 text-xs font-semibold uppercase">{entry.llm}</p>
-                  <p className="text-sm">{entry.response}</p>
-                </div>
-              ))}
-            </div>
             <div className="mt-5">
               <p className="mb-2 text-sm font-semibold">Similar RQs</p>
               <div className="grid gap-2 sm:grid-cols-3">
