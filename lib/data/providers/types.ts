@@ -98,6 +98,14 @@ export interface CreateBidInput {
   votes_against?: number;
 }
 
+/** Bid list voting: up increases votes_for; down increases votes_against (both stay ≥ 0). */
+export const BID_VOTE_DIRECTIONS = ["up", "down"] as const;
+export type BidVoteDirection = (typeof BID_VOTE_DIRECTIONS)[number];
+
+export function isBidVoteDirection(value: string): value is BidVoteDirection {
+  return (BID_VOTE_DIRECTIONS as readonly string[]).includes(value);
+}
+
 export interface DataProvider {
   name: DataProviderName;
   initStubSchema(): Promise<void>;
@@ -124,4 +132,5 @@ export interface DataProvider {
   getPot(): Promise<PotRecord | null>;
   listBidsByStubId(stubId: string): Promise<BidRecord[]>;
   createBid(input: CreateBidInput): Promise<BidRecord>;
+  applyBidVote(bidId: string, direction: BidVoteDirection): Promise<BidRecord | null>;
 }

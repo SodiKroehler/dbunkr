@@ -12,6 +12,7 @@ import * as stubVotesRoute from "@/app/api/v1/stubs/[slug]/votes/route";
 import * as stubsRoute from "@/app/api/v1/stubs/route";
 import * as voteRoute from "@/app/api/v1/vote/route";
 import * as stubBidsRoute from "@/app/api/v1/bids/route";
+import * as voteBidRoute from "@/app/api/v1/voteBid/route";
 
 async function expectListResponse(responsePromise: Promise<Response>) {
   const response = await responsePromise;
@@ -93,6 +94,22 @@ test("POST /api/v1/bids requires orcid", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         stubId: "00000000-0000-0000-0000-000000000001",
+      }),
+    }),
+  );
+  assert.equal(response.status, 400);
+  const body = await response.json();
+  assert.ok("error" in body);
+});
+
+test("POST /api/v1/voteBid rejects invalid direction", async () => {
+  const response = await voteBidRoute.POST(
+    new Request("http://localhost/api/v1/voteBid", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bidId: "00000000-0000-0000-0000-000000000001",
+        direction: "sideways",
       }),
     }),
   );

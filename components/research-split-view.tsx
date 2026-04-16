@@ -24,6 +24,7 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
   const [bidModalOpen, setBidModalOpen] = useState(false);
   const [bidForm, setBidForm] = useState(emptyBidForm);
   const [bidSubmitting, setBidSubmitting] = useState(false);
+  const [bidVotePendingId, setBidVotePendingId] = useState<string | null>(null);
   const bidModalBackdropMouseDown = useRef(false);
 
   useEffect(() => {
@@ -113,6 +114,25 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
       setBidForm({ ...emptyBidForm });
     } finally {
       setBidSubmitting(false);
+    }
+  }
+
+  async function postBidVote(bidId: string, direction: "up" | "down") {
+    if (bidVotePendingId) return;
+    setBidVotePendingId(bidId);
+    try {
+      const response = await fetch("/api/v1/voteBid", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bidId, direction }),
+      });
+      if (!response.ok) return;
+      const payload = (await response.json()) as { data?: BidRecord };
+      const updated = payload.data;
+      if (!updated) return;
+      setBids((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+    } finally {
+      setBidVotePendingId(null);
     }
   }
 
@@ -220,26 +240,48 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
                     {bids.map((b) => (
                       <li
                         key={b.id}
-                        className="rounded-md border border-neutral-100 bg-neutral-50/90 p-3"
+                        className="flex gap-3 rounded-md border border-neutral-100 bg-neutral-50/90 p-3"
                       >
-                        <div className="font-medium text-neutral-900">{b.name || "—"}</div>
-                        <div className="mt-1 text-xs text-neutral-600">ORCID: {b.orcid}</div>
-                        {b.website ? (
-                          <a
-                            href={b.website.startsWith("http") ? b.website : `https://${b.website}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-1 block text-xs text-blue-600 hover:underline"
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-neutral-900">{b.name || "—"}</div>
+                          <div className="mt-1 text-xs text-neutral-600">ORCID: {b.orcid}</div>
+                          {b.website ? (
+                            <a
+                              href={b.website.startsWith("http") ? b.website : `https://${b.website}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-1 block text-xs text-blue-600 hover:underline"
+                            >
+                              {b.website}
+                            </a>
+                          ) : null}
+                          {b.pitch ? (
+                            <p className="mt-2 text-xs leading-relaxed text-neutral-700">{b.pitch}</p>
+                          ) : null}
+                          <div className="mt-2 flex gap-3 text-xs text-neutral-500">
+                            <span>For: {b.votes_for}</span>
+                            <span>Against: {b.votes_against}</span>
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-center justify-center gap-1 self-stretch">
+                          <button
+                            type="button"
+                            aria-label="Vote for this bid"
+                            disabled={bidVotePendingId !== null}
+                            onClick={() => void postBidVote(b.id, "up")}
+                            className="rounded border border-neutral-300 px-2 py-1 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
                           >
-                            {b.website}
-                          </a>
-                        ) : null}
-                        {b.pitch ? (
-                          <p className="mt-2 text-xs leading-relaxed text-neutral-700">{b.pitch}</p>
-                        ) : null}
-                        <div className="mt-2 flex gap-3 text-xs text-neutral-500">
-                          <span>For: {b.votes_for}</span>
-                          <span>Against: {b.votes_against}</span>
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Vote against this bid"
+                            disabled={bidVotePendingId !== null}
+                            onClick={() => void postBidVote(b.id, "down")}
+                            className="rounded border border-neutral-300 px-2 py-1 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+                          >
+                            ↓
+                          </button>
                         </div>
                       </li>
                     ))}

@@ -1,6 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import type {
   BidRecord,
+  BidVoteDirection,
   CreateBidInput,
   CreateStubRecordInput,
   DataProvider,
@@ -743,6 +744,45 @@ export class NeonDataProvider implements DataProvider {
     `) as NeonBidRow[];
 
     return mapBidRow(rows[0]);
+  }
+
+  async applyBidVote(bidId: string, direction: BidVoteDirection): Promise<BidRecord | null> {
+    let rows: NeonBidRow[];
+    if (direction === "up") {
+      rows = (await this.sql`
+        UPDATE bids
+        SET votes_for = GREATEST(votes_for, 0) + 1
+        WHERE id = ${bidId}
+        RETURNING
+          id,
+          stub_id,
+          orcid,
+          name,
+          website,
+          pitch,
+          votes_for,
+          votes_against,
+          created_at;
+      `) as NeonBidRow[];
+    } else {
+      rows = (await this.sql`
+        UPDATE bids
+        SET votes_against = GREATEST(votes_against, 0) + 1
+        WHERE id = ${bidId}
+        RETURNING
+          id,
+          stub_id,
+          orcid,
+          name,
+          website,
+          pitch,
+          votes_for,
+          votes_against,
+          created_at;
+      `) as NeonBidRow[];
+    }
+
+    return rows[0] ? mapBidRow(rows[0]) : null;
   }
 }
 

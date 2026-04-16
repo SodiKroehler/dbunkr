@@ -1,5 +1,6 @@
 import { NeonDataProvider } from "@/lib/data/providers/neonProvider";
 import type {
+  BidVoteDirection,
   CreateBidInput,
   DataProvider,
   StreamSearchInput,
@@ -112,4 +113,9 @@ export async function listBidsForStub(stubId: string) {
 export async function createBidRecord(input: CreateBidInput) {
   const provider = createDataProvider();
   return provider.createBid(input);
+}
+
+export async function applyBidVoteRecord(bidId: string, direction: BidVoteDirection) {
+  const provider = createDataProvider();
+  return provider.applyBidVote(bidId, direction);
 }
