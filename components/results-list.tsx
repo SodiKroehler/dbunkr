@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { StubRecord } from "@/lib/data/providers/types";
 
@@ -26,6 +27,7 @@ export function ResultsList({ initialStubs }: { initialStubs: StubRecord[] }) {
       ) : (
         stubs.map((stub) => (
           <article key={stub.id} className="py-1">
+            <Link href={`/slug/${stub.slug}`} className="block rounded hover:bg-neutral-50">
             <div className="flex items-start justify-between gap-6">
               <div className="space-y-1">
                 <h3 className="text-base font-medium text-neutral-900">{stub.rq}</h3>
@@ -35,6 +37,7 @@ export function ResultsList({ initialStubs }: { initialStubs: StubRecord[] }) {
                 {new Date(stub.created_at).toLocaleDateString()}
               </time>
             </div>
+            </Link>
           </article>
         ))
       )}

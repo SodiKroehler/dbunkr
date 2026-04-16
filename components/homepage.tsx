@@ -20,6 +20,20 @@ export function Homepage() {
     router.push("/results");
   }
 
+  async function onFeelingStudious() {
+    const response = await fetch("/api/v1/stubs");
+    const payload = (await response.json()) as {
+      data?: Array<{ slug: string }>;
+    };
+    const stubs = payload.data ?? [];
+    if (stubs.length === 0) {
+      router.push("/slug/a-random-slug-id-goes-here");
+      return;
+    }
+    const pick = stubs[Math.floor(Math.random() * stubs.length)];
+    router.push(`/slug/${pick.slug}`);
+  }
+
   return (
     <main className="relative min-h-[calc(100vh-72px)] overflow-hidden">
       <div className="wendell-vine-host absolute inset-0">
@@ -51,7 +65,7 @@ export function Homepage() {
               Search
           </button>
           <button
-            onClick={() => router.push("/river")}
+            onClick={onFeelingStudious}
             className="rounded-md border border-neutral-300 bg-white px-5 py-2 text-sm text-black hover:bg-neutral-100"
           >
             I&apos;m Feeling Studious
