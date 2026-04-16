@@ -15,10 +15,12 @@ import {
 import { build_stream_system_prompt } from "@/lib/prompts";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: { slug: string } },
 ) {
-  const stream = await getStreamBySlug(params.slug);
+  const { searchParams } = new URL(request.url);
+  const llm = searchParams.get("llm") === "grok" ? "grok" : "claude";
+  const stream = await getStreamBySlug(params.slug, llm);
   if (!stream) {
     return NextResponse.json({ data: { stream: null, canon: [], messages: [] } });
   }
