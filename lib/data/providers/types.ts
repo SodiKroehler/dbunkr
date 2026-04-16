@@ -57,6 +57,7 @@ export interface DataProvider {
   name: DataProviderName;
   initStubSchema(): Promise<void>;
   listStubRecords(): Promise<StubRecord[]>;
+  matchStubs(query: string): Promise<StubRecord[]>;
   getStubBySlug(slug: string): Promise<StubRecord | null>;
   createStubRecord(input: CreateStubRecordInput): Promise<StubRecord>;
   getStreamBySlug(slug: string, llm?: "claude" | "grok"): Promise<StreamRecord | null>;

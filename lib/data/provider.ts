@@ -32,6 +32,11 @@ export async function listStubRecords() {
   return provider.listStubRecords();
 }
 
+export async function matchStubRecords(query: string) {
+  const provider = createDataProvider();
+  return provider.matchStubs(query);
+}
+
 export async function getStubBySlug(slug: string) {
   const provider = createDataProvider();
   return provider.getStubBySlug(slug);

@@ -177,6 +177,39 @@ export class NeonDataProvider implements DataProvider {
     return rows.map(mapRow);
   }
 
+  async matchStubs(query: string): Promise<StubRecord[]> {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      return this.listStubRecords();
+    }
+
+    const rows = (await this.sql`
+      SELECT
+        id,
+        slug,
+        rq,
+        blurb,
+        status,
+        created_at
+      FROM (
+        SELECT
+          id,
+          slug,
+          rq,
+          blurb,
+          status,
+          created_at,
+          similarity(rq, ${trimmed}) AS score
+        FROM stubs
+      ) matched
+      WHERE score > 0.15
+      ORDER BY score DESC
+      LIMIT 5;
+    `) as NeonStubRecordRow[];
+
+    return rows.map(mapRow);
+  }
+
   async getStubBySlug(slug: string): Promise<StubRecord | null> {
     const rows = (await this.sql`
       SELECT
