@@ -17,6 +17,13 @@ export function Header() {
       >
         RESEARCH
       </Link>
+      <Link
+        href="/about"
+        className="text-sm tracking-wide text-white"
+        style={{ fontFamily: "Helvetica, Arial, sans-serif" }}
+      >
+        ABOUT
+      </Link>
     </header>
   );
 }
