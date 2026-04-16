@@ -26,3 +26,8 @@ export async function initDataProviderSchema(): Promise<void> {
   const provider = createDataProvider();
   await provider.initStubSchema();
 }
+
+export async function listStubRecords() {
+  const provider = createDataProvider();
+  return provider.listStubRecords();
+}

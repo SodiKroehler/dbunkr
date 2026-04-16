@@ -5,14 +5,14 @@ export function Header() {
     <header className="flex items-center gap-8 px-8 py-5">
       <Link
         href="/search"
-        className="text-sm tracking-wide text-black"
+        className="text-sm tracking-wide text-white"
         style={{ fontFamily: "Helvetica, Arial, sans-serif" }}
       >
         SEARCH
       </Link>
       <Link
         href="/research"
-        className="text-sm tracking-wide text-black"
+        className="text-sm tracking-wide text-white"
         style={{ fontFamily: "Helvetica, Arial, sans-serif" }}
       >
         RESEARCH
