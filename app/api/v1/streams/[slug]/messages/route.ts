@@ -4,6 +4,7 @@ import { streamText } from "ai";
 import { NextResponse } from "next/server";
 import {
   createStreamMessage,
+  getPot,
   getStreamBySlug,
   getStubBySlug,
   listStreamMessages,
@@ -62,6 +63,14 @@ export async function POST(
     return NextResponse.json({ error: "stream not found" }, { status: 404 });
   }
 
+  const pot = await getPot();
+  if (!pot || pot.tokens_remaining <= 0) {
+    return NextResponse.json(
+      { error: "insufficient pot tokens remaining" },
+      { status: 402 },
+    );
+  }
+
   const cleanedMessage = clean_stream_message(incoming);
   await createStreamMessage(stream.id, "user", cleanedMessage);
 
@@ -73,8 +82,8 @@ export async function POST(
 
   const model =
     llm === "claude"
-      ? anthropic("claude-sonnet-4-20250514")
-      : xai("grok-4");
+      ? anthropic("claude-haiku-4-5-20251001")
+      : xai("grok-4.1-fast");
 
   const result = streamText({
     model,

@@ -4,6 +4,7 @@ import type {
   DataProvider,
   StreamCanonMessage,
   StreamMessageRecord,
+  PotRecord,
   StreamRecord,
   StreamSearchInput,
   StubRecord,
@@ -81,6 +82,12 @@ type NeonStreamMessageRow = {
   created_at: string | Date;
 };
 
+type NeonPotRow = {
+  id: number;
+  tokens_remaining: number | string;
+  updated_at: string | Date;
+};
+
 function mapStreamCanon(input: unknown): StreamCanonMessage[] {
   if (!Array.isArray(input)) return [];
   return input
@@ -124,6 +131,17 @@ function mapStreamMessageRow(row: NeonStreamMessageRow): StreamMessageRecord {
       row.created_at instanceof Date
         ? row.created_at.toISOString()
         : String(row.created_at),
+  };
+}
+
+function mapPotRow(row: NeonPotRow): PotRecord {
+  return {
+    id: Number(row.id),
+    tokens_remaining: Number(row.tokens_remaining),
+    updated_at:
+      row.updated_at instanceof Date
+        ? row.updated_at.toISOString()
+        : String(row.updated_at),
   };
 }
 
@@ -346,6 +364,17 @@ export class NeonDataProvider implements DataProvider {
     `) as NeonStreamMessageRow[];
 
     return mapStreamMessageRow(rows[0]);
+  }
+
+  async getPot(): Promise<PotRecord | null> {
+    const rows = (await this.sql`
+      SELECT id, tokens_remaining, updated_at
+      FROM pot
+      WHERE id = 1
+      LIMIT 1;
+    `) as NeonPotRow[];
+
+    return rows[0] ? mapPotRow(rows[0]) : null;
   }
 }
 

@@ -45,6 +45,12 @@ export interface StreamSearchInput {
   river?: string;
 }
 
+export interface PotRecord {
+  id: number;
+  tokens_remaining: number;
+  updated_at: string;
+}
+
 export interface DataProvider {
   name: DataProviderName;
   initStubSchema(): Promise<void>;
@@ -61,4 +67,5 @@ export interface DataProvider {
     role: "user" | "assistant",
     content: string,
   ): Promise<StreamMessageRecord>;
+  getPot(): Promise<PotRecord | null>;
 }

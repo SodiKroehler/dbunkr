@@ -70,3 +70,8 @@ export async function createStreamMessage(
   const provider = createDataProvider();
   return provider.createStreamMessage(streamId, role, content);
 }
+
+export async function getPot() {
+  const provider = createDataProvider();
+  return provider.getPot();
+}

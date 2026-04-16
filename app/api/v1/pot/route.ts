@@ -1,5 +1,7 @@
-import { emptyListResponse } from "@/lib/api/empty";
+import { NextResponse } from "next/server";
+import { getPot } from "@/lib/data/provider";
 
 export async function GET() {
-  return emptyListResponse();
+  const pot = await getPot();
+  return NextResponse.json({ data: pot });
 }
