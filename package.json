@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:init-stub": "node ./scripts/init-neon-stub.mjs"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.2",
     "@upstash/redis": "^1.37.0",
