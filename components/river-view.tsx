@@ -251,7 +251,7 @@ export function RiverView({ slug }: RiverViewProps) {
                 {unrelatedModal.suggestions.slice(0, 3).map((item) => (
                   <Link
                     key={item.slug}
-                    href={`/slug/${item.slug}`}
+                    href={`/stub/${item.slug}`}
                     className="rounded border border-neutral-300 p-2 text-sm hover:bg-neutral-50"
                   >
                     {item.rq}

@@ -27,11 +27,11 @@ export function Homepage() {
     };
     const stubs = payload.data ?? [];
     if (stubs.length === 0) {
-      router.push("/slug/a-random-slug-id-goes-here");
+      router.push("/stub/a-random-slug-id-goes-here");
       return;
     }
     const pick = stubs[Math.floor(Math.random() * stubs.length)];
-    router.push(`/slug/${pick.slug}`);
+    router.push(`/stub/${pick.slug}`);
   }
 
   return (

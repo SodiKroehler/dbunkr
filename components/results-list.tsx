@@ -27,7 +27,7 @@ export function ResultsList({ initialStubs }: { initialStubs: StubRecord[] }) {
       ) : (
         stubs.map((stub) => (
           <article key={stub.id} className="py-1">
-            <Link href={`/slug/${stub.slug}`} className="block rounded hover:bg-neutral-50">
+            <Link href={`/stub/${stub.slug}`} className="block rounded hover:bg-neutral-50">
             <div className="flex items-start justify-between gap-6">
               <div className="space-y-1">
                 <h3 className="text-base font-medium text-neutral-900">{stub.rq}</h3>
