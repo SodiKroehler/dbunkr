@@ -107,7 +107,13 @@ export function RiverView({ slug }: RiverViewProps) {
         />
       </div>
 
-      <div className="mt-6 flex gap-2">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          void onSend();
+        }}
+        className="mt-6 flex gap-2"
+      >
         <input
           value={message}
           onChange={(event) => setMessage(event.target.value)}
@@ -115,14 +121,13 @@ export function RiverView({ slug }: RiverViewProps) {
           placeholder="speak ur truth sista"
         />
         <button
-          type="button"
-          onClick={onSend}
+          type="submit"
           disabled={sending}
           className="rounded border border-neutral-300 bg-white px-4 py-2 text-sm text-black hover:bg-neutral-100 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-500"
         >
           {sending ? "Sending..." : "Send"}
         </button>
-      </div>
+      </form>
     </>
   );
 }

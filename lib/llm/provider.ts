@@ -5,7 +5,7 @@ export type LlmName = "claude" | "grok";
 
 export function getLlmModel(llm: LlmName) {
   if (llm === "grok") {
-    return xai("grok-4.1-fast");
+    return xai(process.env.XAI_MODEL || "grok-4");
   }
-  return anthropic("claude-haiku-4-5-20251001");
+  return anthropic(process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001");
 }
