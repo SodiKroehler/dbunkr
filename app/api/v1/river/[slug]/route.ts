@@ -7,6 +7,7 @@ import {
   listStreamMessages,
   listStreamsBySlug,
 } from "@/lib/data/provider";
+import { match } from "@/lib/match";
 import { getLlmModel, type LlmName } from "@/lib/llm/provider";
 import { build_stream_system_prompt } from "@/lib/prompts";
 import { clean_stream_message, postprocess } from "@/lib/stream/processing";
@@ -46,7 +47,7 @@ export async function POST(
     return NextResponse.json({ error: "no streams available" }, { status: 404 });
   }
 
-  const cleanedMessage = clean_stream_message(incoming);
+  const cleanedMessage = incoming;
   const sessionSuffix = sessionId ? sessionId.slice(-4) : "anon";
   const userUname = `user-${sessionSuffix}`;
   const encoder = new TextEncoder();
@@ -60,6 +61,7 @@ export async function POST(
           "user",
           sessionId,
           userUname,
+          "ephemeral",
           cleanedMessage,
         );
 
@@ -71,9 +73,7 @@ export async function POST(
 
         const result = streamText({
           model: getLlmModel(llm),
-          system: clean_stream_message(
-            build_stream_system_prompt(stub, stream.canon, cleanedMessage),
-          ),
+          system: build_stream_system_prompt(stub, stream.canon, cleanedMessage),
           messages: history,
         });
 
@@ -85,10 +85,50 @@ export async function POST(
           );
         }
 
-        const processed = await postprocess(params.slug, stream.id, fullText);
-        await createStreamMessage(stream.id, "assistant", sessionId, llm, processed);
+        const cleanedOutput = clean_stream_message(fullText);
+
+        if (cleanedOutput.tag === "unrelated") {
+          const matches = await match(cleanedMessage);
+          controller.enqueue(
+            encoder.encode(
+              `${JSON.stringify({
+                llm,
+                type: "unrelated",
+                stream_id: stream.id,
+                response: cleanedOutput.content,
+                user_message: cleanedMessage,
+                suggestions: matches.slice(0, 3).map((stubMatch) => ({
+                  slug: stubMatch.slug,
+                  rq: stubMatch.rq,
+                })),
+              })}\n`,
+            ),
+          );
+          return;
+        }
+
+        const processed = await postprocess(
+          params.slug,
+          stream.id,
+          cleanedOutput.content,
+        );
+        const messageType = cleanedOutput.tag === "unseen" ? "proposed" : "ephemeral";
+        await createStreamMessage(
+          stream.id,
+          "assistant",
+          sessionId,
+          llm,
+          messageType,
+          processed,
+        );
         controller.enqueue(
-          encoder.encode(`${JSON.stringify({ llm, type: "done" })}\n`),
+          encoder.encode(
+            `${JSON.stringify({
+              llm,
+              type: "done",
+              novel: cleanedOutput.tag === "unseen",
+            })}\n`,
+          ),
         );
       });
 

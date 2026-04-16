@@ -108,7 +108,7 @@ export async function POST(
     );
   }
 
-  const cleanedMessage = clean_stream_message(incoming);
+  const cleanedMessage = incoming;
   debugLog("Message cleaned", {
     originalLength: incoming.length,
     cleanedLength: cleanedMessage.length,
@@ -120,6 +120,7 @@ export async function POST(
     "user",
     sessionId,
     userUname,
+    "ephemeral",
     cleanedMessage,
   );
   debugLog("Stored user message", {
@@ -143,9 +144,7 @@ export async function POST(
     modelId: llm,
   });
 
-  const systemPrompt = clean_stream_message(
-    build_stream_system_prompt(stub, stream.canon, cleanedMessage),
-  );
+  const systemPrompt = build_stream_system_prompt(stub, stream.canon, cleanedMessage);
   debugLog("Built system prompt", { promptLength: systemPrompt.length });
 
   const result = streamText({
@@ -163,12 +162,25 @@ export async function POST(
         streamId: stream.id,
         textLength: text.length,
       });
-      const processed = await postprocess(params.slug, stream.id, text);
+      const cleanedOutput = clean_stream_message(text);
+      const processed = await postprocess(
+        params.slug,
+        stream.id,
+        cleanedOutput.content,
+      );
       debugLog("Postprocess complete", {
         streamId: stream.id,
         processedLength: processed.length,
       });
-      await createStreamMessage(stream.id, "assistant", sessionId, llm, processed);
+      const messageType = cleanedOutput.tag === "unseen" ? "proposed" : "ephemeral";
+      await createStreamMessage(
+        stream.id,
+        "assistant",
+        sessionId,
+        llm,
+        messageType,
+        processed,
+      );
       debugLog("Stored assistant message", {
         streamId: stream.id,
         role: "assistant",

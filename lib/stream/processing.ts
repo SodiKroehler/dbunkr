@@ -1,7 +1,33 @@
 import type { StreamCanonMessage, StreamRecord, StubRecord } from "@/lib/data/providers/types";
 
-export function clean_stream_message(message: string): string {
-  return message;
+export type CleanStreamResult = {
+  tag: "unseen" | "unrelated" | "none";
+  content: string;
+};
+
+export function clean_stream_message(message: string): CleanStreamResult {
+  const lines = message.split("\n");
+  const firstLine = (lines[0] ?? "").trim();
+  const trimmedBody = lines.slice(1).join("\n").trim();
+
+  if (firstLine === "IS_UNSEEN") {
+    return {
+      tag: "unseen",
+      content: trimmedBody,
+    };
+  }
+
+  if (firstLine === "IS_UNRELATED") {
+    return {
+      tag: "unrelated",
+      content: trimmedBody,
+    };
+  }
+
+  return {
+    tag: "none",
+    content: message.trim(),
+  };
 }
 
 export async function postprocess(

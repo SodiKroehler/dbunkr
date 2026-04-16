@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Stream } from "@/components/stream";
 
 type RiverViewProps = {
@@ -12,6 +13,14 @@ async function sendToRiver(
   message: string,
   sessionId: string,
   onChunk: (llm: "claude" | "grok", chunk: string) => void,
+  onDone: (llm: "claude" | "grok", novel: boolean) => void,
+  onUnrelated: (payload: {
+    llm: "claude" | "grok";
+    stream_id: string;
+    response: string;
+    user_message: string;
+    suggestions: Array<{ slug: string; rq: string }>;
+  }) => void,
 ) {
   const response = await fetch(`/api/v1/river/${slug}`, {
     method: "POST",
@@ -44,11 +53,34 @@ async function sendToRiver(
       if (!line.trim()) continue;
       const evt = JSON.parse(line) as {
         llm?: "claude" | "grok";
-        type: "delta" | "done" | "error";
+        type: "delta" | "done" | "error" | "unrelated";
         chunk?: string;
+        stream_id?: string;
+        response?: string;
+        user_message?: string;
+        suggestions?: Array<{ slug: string; rq: string }>;
+        novel?: boolean;
       };
       if (evt.type === "delta" && evt.llm && evt.chunk) {
         onChunk(evt.llm, evt.chunk);
+      }
+      if (evt.type === "done" && evt.llm) {
+        onDone(evt.llm, Boolean(evt.novel));
+      }
+      if (
+        evt.type === "unrelated" &&
+        evt.llm &&
+        evt.stream_id &&
+        evt.response &&
+        evt.user_message
+      ) {
+        onUnrelated({
+          llm: evt.llm,
+          stream_id: evt.stream_id,
+          response: evt.response,
+          user_message: evt.user_message,
+          suggestions: evt.suggestions ?? [],
+        });
       }
     }
   }
@@ -65,6 +97,17 @@ export function RiverView({ slug }: RiverViewProps) {
     claude: "",
     grok: "",
   });
+  const [liveNovelByLlm, setLiveNovelByLlm] = useState<
+    Record<"claude" | "grok", boolean>
+  >({
+    claude: false,
+    grok: false,
+  });
+  const [unrelatedModal, setUnrelatedModal] = useState<{
+    userMessage: string;
+    entries: Array<{ llm: "claude" | "grok"; stream_id: string; response: string }>;
+    suggestions: Array<{ slug: string; rq: string }>;
+  } | null>(null);
 
   async function onSend() {
     const trimmed = message.trim();
@@ -81,19 +124,67 @@ export function RiverView({ slug }: RiverViewProps) {
     try {
       setLiveUserMessage(trimmed);
       setLiveAssistantByLlm({ claude: "", grok: "" });
-      await sendToRiver(slug, trimmed, sessionId, (llm, chunk) => {
-        setLiveAssistantByLlm((prev) => ({
-          ...prev,
-          [llm]: `${prev[llm]}${chunk}`,
-        }));
-      });
+      setLiveNovelByLlm({ claude: false, grok: false });
+      let hadUnrelated = false;
+      await sendToRiver(
+        slug,
+        trimmed,
+        sessionId,
+        (llm, chunk) => {
+          setLiveAssistantByLlm((prev) => ({
+            ...prev,
+            [llm]: `${prev[llm]}${chunk}`,
+          }));
+        },
+        (llm, novel) => {
+          setLiveNovelByLlm((prev) => ({ ...prev, [llm]: novel }));
+        },
+        (payload) => {
+          hadUnrelated = true;
+          setUnrelatedModal((prev) => {
+            const existingEntries = prev?.entries ?? [];
+            const exists = existingEntries.some(
+              (entry) => entry.llm === payload.llm && entry.stream_id === payload.stream_id,
+            );
+            const nextEntries = exists
+              ? existingEntries
+              : [...existingEntries, { llm: payload.llm, stream_id: payload.stream_id, response: payload.response }];
+            return {
+              userMessage: payload.user_message,
+              entries: nextEntries,
+              suggestions: payload.suggestions,
+            };
+          });
+        },
+      );
       setMessage("");
-      setLiveUserMessage(null);
-      setLiveAssistantByLlm({ claude: "", grok: "" });
-      setRefreshKey((prev) => prev + 1);
+      if (!hadUnrelated) {
+        setLiveUserMessage(null);
+        setLiveAssistantByLlm({ claude: "", grok: "" });
+        setLiveNovelByLlm({ claude: false, grok: false });
+        setRefreshKey((prev) => prev + 1);
+      }
     } finally {
       setSending(false);
     }
+  }
+
+  async function acceptUnrelated() {
+    if (!unrelatedModal) return;
+    const sessionId = localStorage.getItem("session_id");
+    await fetch(`/api/v1/river/${slug}/accept-unrelated`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: sessionId,
+        entries: unrelatedModal.entries,
+      }),
+    });
+    setUnrelatedModal(null);
+    setLiveUserMessage(null);
+    setLiveAssistantByLlm({ claude: "", grok: "" });
+    setLiveNovelByLlm({ claude: false, grok: false });
+    setRefreshKey((prev) => prev + 1);
   }
 
   return (
@@ -105,6 +196,7 @@ export function RiverView({ slug }: RiverViewProps) {
           refreshKey={refreshKey}
           liveUserMessage={liveUserMessage}
           liveAssistantMessage={liveAssistantByLlm.claude}
+          liveNovel={liveNovelByLlm.claude}
         />
         <Stream
           slug={slug}
@@ -112,6 +204,7 @@ export function RiverView({ slug }: RiverViewProps) {
           refreshKey={refreshKey}
           liveUserMessage={liveUserMessage}
           liveAssistantMessage={liveAssistantByLlm.grok}
+          liveNovel={liveNovelByLlm.grok}
         />
       </div>
 
@@ -136,6 +229,46 @@ export function RiverView({ slug }: RiverViewProps) {
           {sending ? "Sending..." : "Send"}
         </button>
       </form>
+
+      {unrelatedModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-lg bg-white p-6 text-black">
+            <h3 className="text-lg font-semibold">This seems unrelated to the RQ.</h3>
+            <p className="mt-3 text-sm">
+              <span className="font-semibold">User request:</span> {unrelatedModal.userMessage}
+            </p>
+            <div className="mt-4 space-y-3">
+              {unrelatedModal.entries.map((entry) => (
+                <div key={`${entry.llm}-${entry.stream_id}`} className="rounded border border-neutral-200 p-3">
+                  <p className="mb-1 text-xs font-semibold uppercase">{entry.llm}</p>
+                  <p className="text-sm">{entry.response}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5">
+              <p className="mb-2 text-sm font-semibold">Similar RQs</p>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {unrelatedModal.suggestions.slice(0, 3).map((item) => (
+                  <Link
+                    key={item.slug}
+                    href={`/slug/${item.slug}`}
+                    className="rounded border border-neutral-300 p-2 text-sm hover:bg-neutral-50"
+                  >
+                    {item.rq}
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={acceptUnrelated}
+              className="mt-6 text-xs text-neutral-500 hover:text-neutral-700"
+            >
+              No, this is related
+            </button>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

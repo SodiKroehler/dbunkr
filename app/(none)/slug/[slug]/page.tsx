@@ -29,6 +29,21 @@ export default async function SlugPage({
             {stub?.rq ?? "Unknown research question"}
           </h1>
           <p className="text-base leading-7 text-neutral-700">{stub?.blurb ?? ""}</p>
+
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-800">
+              Related Links
+            </h2>
+            <a
+              href="https://google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:underline"
+            >
+              https://google.com
+            </a>
+          </div>
+
           <p className="text-xs tracking-wide text-neutral-400">{params.slug}</p>
           <OpenRiverLink slug={params.slug} />
         </section>
@@ -77,6 +92,13 @@ export default async function SlugPage({
                 />
               </div>
             </div>
+          </div>
+
+          <div className="mt-6 space-y-2">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-800">
+              What We Don&apos;t Know
+            </h3>
+            <div className="min-h-16 rounded border border-dashed border-neutral-300 bg-white" />
           </div>
         </aside>
       </div>
