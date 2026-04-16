@@ -6,6 +6,7 @@ import { Stream } from "@/components/stream";
 
 type RiverViewProps = {
   slug: string;
+  className?: string;
 };
 
 async function sendToRiver(
@@ -86,7 +87,7 @@ async function sendToRiver(
   }
 }
 
-export function RiverView({ slug }: RiverViewProps) {
+export function RiverView({ slug, className }: RiverViewProps) {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -188,8 +189,8 @@ export function RiverView({ slug }: RiverViewProps) {
   }
 
   return (
-    <>
-      <div className="grid gap-6 lg:grid-cols-2">
+    <div className={`flex min-h-0 flex-col ${className ?? ""}`}>
+      <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-2">
         <Stream
           slug={slug}
           llm="claude"
@@ -213,7 +214,7 @@ export function RiverView({ slug }: RiverViewProps) {
           event.preventDefault();
           void onSend();
         }}
-        className="mt-6 flex gap-2"
+        className="mt-4 flex shrink-0 gap-2"
       >
         <input
           value={message}
@@ -269,6 +270,6 @@ export function RiverView({ slug }: RiverViewProps) {
           </div>
         </div>
       ) : null}
-    </>
+    </div>
   );
 }

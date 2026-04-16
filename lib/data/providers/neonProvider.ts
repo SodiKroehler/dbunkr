@@ -46,6 +46,9 @@ type NeonStubRecordRow = {
   slug: string;
   rq: string;
   blurb: string | null;
+  left: number | string;
+  right: number | string;
+  center: number | string;
   status: "seeded" | "proposed" | "approved";
   created_at: string | Date;
 };
@@ -56,6 +59,9 @@ function mapRow(row: NeonStubRecordRow): StubRecord {
     slug: row.slug,
     rq: row.rq,
     blurb: row.blurb,
+    left: Number(row.left),
+    right: Number(row.right),
+    center: Number(row.center),
     status: row.status,
     created_at:
       row.created_at instanceof Date
@@ -164,17 +170,39 @@ export class NeonDataProvider implements DataProvider {
   }
 
   async listStubRecords(): Promise<StubRecord[]> {
-    const rows = (await this.sql`
-      SELECT
-        id,
-        slug,
-        rq,
-        blurb,
-        status,
-        created_at
-      FROM stubs
-      ORDER BY created_at DESC;
-    `) as NeonStubRecordRow[];
+    let rows: NeonStubRecordRow[];
+    try {
+      rows = (await this.sql`
+        SELECT
+          id,
+          slug,
+          rq,
+          blurb,
+          "left",
+          "right",
+          "center",
+          status,
+          created_at
+        FROM stubs
+        ORDER BY created_at DESC;
+      `) as NeonStubRecordRow[];
+    } catch (error) {
+      if ((error as { code?: string })?.code !== "42703") throw error;
+      rows = (await this.sql`
+        SELECT
+          id,
+          slug,
+          rq,
+          blurb,
+          0 AS "left",
+          0 AS "right",
+          0 AS "center",
+          status,
+          created_at
+        FROM stubs
+        ORDER BY created_at DESC;
+      `) as NeonStubRecordRow[];
+    }
 
     return rows.map(mapRow);
   }
@@ -185,46 +213,106 @@ export class NeonDataProvider implements DataProvider {
       return this.listStubRecords();
     }
 
-    const rows = (await this.sql`
-      SELECT
-        id,
-        slug,
-        rq,
-        blurb,
-        status,
-        created_at
-      FROM (
+    let rows: NeonStubRecordRow[];
+    try {
+      rows = (await this.sql`
         SELECT
           id,
           slug,
           rq,
           blurb,
+          "left",
+          "right",
+          "center",
           status,
-          created_at,
-          similarity(rq, ${trimmed}) AS score
-        FROM stubs
-      ) matched
-      WHERE score > 0.15
-      ORDER BY score DESC
-      LIMIT 5;
-    `) as NeonStubRecordRow[];
+          created_at
+        FROM (
+          SELECT
+            id,
+            slug,
+            rq,
+            blurb,
+            "left",
+            "right",
+            "center",
+            status,
+            created_at,
+            similarity(rq, ${trimmed}) AS score
+          FROM stubs
+        ) matched
+        WHERE score > 0.15
+        ORDER BY score DESC
+        LIMIT 5;
+      `) as NeonStubRecordRow[];
+    } catch (error) {
+      if ((error as { code?: string })?.code !== "42703") throw error;
+      rows = (await this.sql`
+        SELECT
+          id,
+          slug,
+          rq,
+          blurb,
+          0 AS "left",
+          0 AS "right",
+          0 AS "center",
+          status,
+          created_at
+        FROM (
+          SELECT
+            id,
+            slug,
+            rq,
+            blurb,
+            status,
+            created_at,
+            similarity(rq, ${trimmed}) AS score
+          FROM stubs
+        ) matched
+        WHERE score > 0.15
+        ORDER BY score DESC
+        LIMIT 5;
+      `) as NeonStubRecordRow[];
+    }
 
     return rows.map(mapRow);
   }
 
   async getStubBySlug(slug: string): Promise<StubRecord | null> {
-    const rows = (await this.sql`
-      SELECT
-        id,
-        slug,
-        rq,
-        blurb,
-        status,
-        created_at
-      FROM stubs
-      WHERE slug = ${slug}
-      LIMIT 1;
-    `) as NeonStubRecordRow[];
+    let rows: NeonStubRecordRow[];
+    try {
+      rows = (await this.sql`
+        SELECT
+          id,
+          slug,
+          rq,
+          blurb,
+          "left",
+          "right",
+          "center",
+          status,
+          created_at
+        FROM stubs
+        WHERE slug = ${slug}
+        LIMIT 1;
+      `) as NeonStubRecordRow[];
+    } catch (error) {
+      if ((error as { code?: string })?.code !== "42703") throw error;
+      rows = (await this.sql`
+        SELECT
+          id,
+          slug,
+          rq,
+          blurb,
+          0 AS "left",
+          0 AS "right",
+          0 AS "center",
+          status,
+          created_at
+        FROM stubs
+        WHERE slug = ${slug}
+        LIMIT 1;
+      `) as NeonStubRecordRow[];
+    }
 
     return rows[0] ? mapRow(rows[0]) : null;
   }
@@ -235,12 +323,18 @@ export class NeonDataProvider implements DataProvider {
         slug,
         rq,
         blurb,
+        "left",
+        "right",
+        "center",
         status
       )
       VALUES (
         ${input.slug},
         ${input.rq},
         ${input.blurb ?? null},
+        ${input.left ?? 0},
+        ${input.right ?? 0},
+        ${input.center ?? 0},
         ${input.status ?? "proposed"}
       )
       RETURNING
@@ -248,6 +342,9 @@ export class NeonDataProvider implements DataProvider {
         slug,
         rq,
         blurb,
+        "left",
+        "right",
+        "center",
         status,
         created_at;
     `) as NeonStubRecordRow[];

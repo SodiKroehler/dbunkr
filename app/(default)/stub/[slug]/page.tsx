@@ -1,25 +1,12 @@
 import { RiverView } from "@/components/river-view";
 import { getStubBySlug } from "@/lib/data/provider";
 
-function getBiasValuesFromSlug(slug: string) {
-  let hash = 0;
-  for (let i = 0; i < slug.length; i += 1) {
-    hash = (hash * 31 + slug.charCodeAt(i)) % 9973;
-  }
-  return {
-    left: (hash * 13) % 101,
-    moderate: (hash * 29 + 7) % 101,
-    right: (hash * 47 + 3) % 101,
-  };
-}
-
 export default async function StubPage({
   params,
 }: {
   params: { slug: string };
 }) {
   const stub = await getStubBySlug(params.slug);
-  const bias = getBiasValuesFromSlug(params.slug);
 
   if (!stub) {
     return (
@@ -29,8 +16,10 @@ export default async function StubPage({
     );
   }
 
+  const overallConfidence = Math.round((stub.left + stub.center + stub.right) / 3);
+
   return (
-    <main className="min-h-screen bg-white px-8 py-8">
+    <main className="min-h-[calc(100vh-72px)] bg-white px-8 py-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
         <section className="grid min-h-[33vh] gap-8 lg:grid-cols-[1.8fr_1fr]">
           <div className="space-y-4">
@@ -63,34 +52,38 @@ export default async function StubPage({
               <div>
                 <div className="mb-1 flex justify-between text-neutral-700">
                   <span>left</span>
-                  <span>{bias.left}</span>
+                  <span>{stub.left}</span>
                 </div>
                 <div className="h-2 w-full rounded bg-neutral-200">
-                  <div className="h-2 rounded bg-blue-500" style={{ width: `${bias.left}%` }} />
+                  <div className="h-2 rounded bg-blue-500" style={{ width: `${stub.left}%` }} />
                 </div>
               </div>
 
               <div>
                 <div className="mb-1 flex justify-between text-neutral-700">
-                  <span>moderate</span>
-                  <span>{bias.moderate}</span>
+                  <span>center</span>
+                  <span>{stub.center}</span>
                 </div>
                 <div className="h-2 w-full rounded bg-neutral-200">
-                  <div
-                    className="h-2 rounded bg-emerald-500"
-                    style={{ width: `${bias.moderate}%` }}
-                  />
+                  <div className="h-2 rounded bg-emerald-500" style={{ width: `${stub.center}%` }} />
                 </div>
               </div>
 
               <div>
                 <div className="mb-1 flex justify-between text-neutral-700">
                   <span>right</span>
-                  <span>{bias.right}</span>
+                  <span>{stub.right}</span>
                 </div>
                 <div className="h-2 w-full rounded bg-neutral-200">
-                  <div className="h-2 rounded bg-red-500" style={{ width: `${bias.right}%` }} />
+                  <div className="h-2 rounded bg-red-500" style={{ width: `${stub.right}%` }} />
                 </div>
+              </div>
+            </div>
+
+            <div className="mt-4 border-t border-neutral-200 pt-3">
+              <div className="flex items-center justify-between text-sm text-neutral-700">
+                <span>overall confidence</span>
+                <span>{overallConfidence}</span>
               </div>
             </div>
 
@@ -103,8 +96,8 @@ export default async function StubPage({
           </aside>
         </section>
 
-        <section className="min-h-0">
-          <RiverView slug={params.slug} />
+        <section className="h-[66vh] min-h-[420px]">
+          <RiverView slug={params.slug} className="h-full" />
         </section>
       </div>
     </main>

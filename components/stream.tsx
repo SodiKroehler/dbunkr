@@ -53,10 +53,11 @@ export function Stream({
     return () => controller.abort();
   }, [slug, llm, refreshKey]);
 
-  const title = useMemo(() => `${slug} (${llm})`, [slug, llm]);
+  // const title = useMemo(() => `${slug} (${llm})`, [slug, llm]);
+  const title = useMemo(() => `${llm}`, [llm]);
 
   return (
-    <section className="flex h-[70vh] flex-col rounded-lg border border-neutral-200 bg-white p-4 text-black">
+    <section className="flex h-full min-h-0 flex-col rounded-lg border border-neutral-200 bg-white p-4 text-black">
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-black">{title}</h2>
 
       <div className="flex-1 space-y-2 overflow-y-auto rounded border border-neutral-200 p-3 text-black">
