@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { BidRecord, StubRecord, StubVoteType } from "@/lib/data/providers/types";
 import { BiddableStub } from "@/components/biddable-stub";
 
@@ -10,9 +10,10 @@ const emptyBidForm = {
   name: "",
   website: "",
   pitch: "",
-  votes_for: "",
-  votes_against: "",
 };
+
+const bidFieldClass =
+  "mt-1 w-full rounded border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 placeholder:text-neutral-400";
 
 export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
   const [localStubs, setLocalStubs] = useState<StubRecord[]>(stubs);
@@ -23,6 +24,7 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
   const [bidModalOpen, setBidModalOpen] = useState(false);
   const [bidForm, setBidForm] = useState(emptyBidForm);
   const [bidSubmitting, setBidSubmitting] = useState(false);
+  const bidModalBackdropMouseDown = useRef(false);
 
   useEffect(() => {
     setLocalStubs(stubs);
@@ -89,11 +91,6 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
     const orcid = bidForm.orcid.trim();
     if (!orcid) return;
 
-    const vf =
-      bidForm.votes_for.trim() === "" ? undefined : Number(bidForm.votes_for);
-    const va =
-      bidForm.votes_against.trim() === "" ? undefined : Number(bidForm.votes_against);
-
     setBidSubmitting(true);
     try {
       const response = await fetch("/api/v1/bids", {
@@ -105,8 +102,6 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
           name: bidForm.name.trim() || undefined,
           website: bidForm.website.trim() || null,
           pitch: bidForm.pitch.trim() || undefined,
-          votes_for: vf !== undefined && Number.isFinite(vf) ? vf : undefined,
-          votes_against: va !== undefined && Number.isFinite(va) ? va : undefined,
         }),
       });
       if (!response.ok) return;
@@ -269,60 +264,69 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
 
       {bidModalOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 text-neutral-900"
           role="presentation"
-          onClick={() => setBidModalOpen(false)}
+          onMouseDown={(e) => {
+            bidModalBackdropMouseDown.current = e.target === e.currentTarget;
+          }}
+          onMouseUp={(e) => {
+            if (bidModalBackdropMouseDown.current && e.target === e.currentTarget) {
+              setBidModalOpen(false);
+            }
+            bidModalBackdropMouseDown.current = false;
+          }}
         >
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="bid-modal-title"
-            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-neutral-200 bg-white p-5 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
+            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-neutral-200 bg-white p-5 text-neutral-900 shadow-lg"
           >
             <h3 id="bid-modal-title" className="text-lg font-semibold text-neutral-900">
               New bid
             </h3>
-            <p className="mt-1 text-xs text-neutral-500">ORCID is required; other fields are optional.</p>
+            <p className="mt-1 text-xs text-neutral-600">
+              ORCID is required; other fields are optional.
+            </p>
             <form onSubmit={(e) => void submitBid(e)} className="mt-4 space-y-3">
               <div>
-                <label htmlFor="bid-orcid" className="text-xs font-medium text-neutral-700">
+                <label htmlFor="bid-orcid" className="text-xs font-medium text-neutral-800">
                   ORCID
                 </label>
                 <input
                   id="bid-orcid"
                   value={bidForm.orcid}
                   onChange={(e) => setBidForm((f) => ({ ...f, orcid: e.target.value }))}
-                  className="mt-1 w-full rounded border border-neutral-300 px-2 py-1.5 text-sm"
+                  className={bidFieldClass}
                   placeholder="0000-0002-1825-0097"
                   required
                 />
               </div>
               <div>
-                <label htmlFor="bid-name" className="text-xs font-medium text-neutral-700">
+                <label htmlFor="bid-name" className="text-xs font-medium text-neutral-800">
                   Name
                 </label>
                 <input
                   id="bid-name"
                   value={bidForm.name}
                   onChange={(e) => setBidForm((f) => ({ ...f, name: e.target.value }))}
-                  className="mt-1 w-full rounded border border-neutral-300 px-2 py-1.5 text-sm"
+                  className={bidFieldClass}
                 />
               </div>
               <div>
-                <label htmlFor="bid-website" className="text-xs font-medium text-neutral-700">
+                <label htmlFor="bid-website" className="text-xs font-medium text-neutral-800">
                   Website
                 </label>
                 <input
                   id="bid-website"
                   value={bidForm.website}
                   onChange={(e) => setBidForm((f) => ({ ...f, website: e.target.value }))}
-                  className="mt-1 w-full rounded border border-neutral-300 px-2 py-1.5 text-sm"
+                  className={bidFieldClass}
                   placeholder="https://"
                 />
               </div>
               <div>
-                <label htmlFor="bid-pitch" className="text-xs font-medium text-neutral-700">
+                <label htmlFor="bid-pitch" className="text-xs font-medium text-neutral-800">
                   Pitch
                 </label>
                 <textarea
@@ -330,42 +334,14 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
                   value={bidForm.pitch}
                   onChange={(e) => setBidForm((f) => ({ ...f, pitch: e.target.value }))}
                   rows={4}
-                  className="mt-1 w-full rounded border border-neutral-300 px-2 py-1.5 text-sm"
+                  className={bidFieldClass}
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="bid-votes-for" className="text-xs font-medium text-neutral-700">
-                    Votes for
-                  </label>
-                  <input
-                    id="bid-votes-for"
-                    type="number"
-                    value={bidForm.votes_for}
-                    onChange={(e) => setBidForm((f) => ({ ...f, votes_for: e.target.value }))}
-                    className="mt-1 w-full rounded border border-neutral-300 px-2 py-1.5 text-sm"
-                    min={0}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="bid-votes-against" className="text-xs font-medium text-neutral-700">
-                    Votes against
-                  </label>
-                  <input
-                    id="bid-votes-against"
-                    type="number"
-                    value={bidForm.votes_against}
-                    onChange={(e) => setBidForm((f) => ({ ...f, votes_against: e.target.value }))}
-                    className="mt-1 w-full rounded border border-neutral-300 px-2 py-1.5 text-sm"
-                    min={0}
-                  />
-                </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setBidModalOpen(false)}
-                  className="rounded border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
+                  className="rounded border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-800 hover:bg-neutral-50"
                 >
                   Cancel
                 </button>
