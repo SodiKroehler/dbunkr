@@ -78,6 +78,8 @@ type NeonStreamMessageRow = {
   id: string;
   stream_id: string;
   role: "user" | "assistant";
+  session_id: string | null;
+  uname: string;
   content: string;
   created_at: string | Date;
 };
@@ -126,6 +128,8 @@ function mapStreamMessageRow(row: NeonStreamMessageRow): StreamMessageRecord {
     id: row.id,
     stream_id: row.stream_id,
     role: row.role,
+    session_id: row.session_id,
+    uname: row.uname,
     content: row.content,
     created_at:
       row.created_at instanceof Date
@@ -361,6 +365,8 @@ export class NeonDataProvider implements DataProvider {
         id,
         stream_id,
         role,
+        session_id,
+        uname,
         content,
         created_at
       FROM stream_msgs
@@ -374,12 +380,14 @@ export class NeonDataProvider implements DataProvider {
   async createStreamMessage(
     streamId: string,
     role: "user" | "assistant",
+    session_id: string | null,
+    uname: string,
     content: string,
   ): Promise<StreamMessageRecord> {
     const rows = (await this.sql`
-      INSERT INTO stream_msgs (stream_id, role, content)
-      VALUES (${streamId}, ${role}, ${content})
-      RETURNING id, stream_id, role, content, created_at;
+      INSERT INTO stream_msgs (stream_id, role, session_id, uname, content)
+      VALUES (${streamId}, ${role}, ${session_id}, ${uname}, ${content})
+      RETURNING id, stream_id, role, session_id, uname, content, created_at;
     `) as NeonStreamMessageRow[];
 
     return mapStreamMessageRow(rows[0]);

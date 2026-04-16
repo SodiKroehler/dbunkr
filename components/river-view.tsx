@@ -10,12 +10,13 @@ type RiverViewProps = {
 async function sendToRiver(
   slug: string,
   message: string,
+  sessionId: string,
   onChunk: (llm: "claude" | "grok", chunk: string) => void,
 ) {
   const response = await fetch(`/api/v1/river/${slug}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, session_id: sessionId }),
   });
 
   if (!response.ok) {
@@ -69,11 +70,18 @@ export function RiverView({ slug }: RiverViewProps) {
     const trimmed = message.trim();
     if (!trimmed || sending) return;
 
+    const sessionId =
+      localStorage.getItem("session_id") ??
+      (typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2));
+    localStorage.setItem("session_id", sessionId);
+
     setSending(true);
     try {
       setLiveUserMessage(trimmed);
       setLiveAssistantByLlm({ claude: "", grok: "" });
-      await sendToRiver(slug, trimmed, (llm, chunk) => {
+      await sendToRiver(slug, trimmed, sessionId, (llm, chunk) => {
         setLiveAssistantByLlm((prev) => ({
           ...prev,
           [llm]: `${prev[llm]}${chunk}`,

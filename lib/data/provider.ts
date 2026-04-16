@@ -70,10 +70,12 @@ export async function listStreamMessages(streamId: string) {
 export async function createStreamMessage(
   streamId: string,
   role: "user" | "assistant",
+  session_id: string | null,
+  uname: string,
   content: string,
 ) {
   const provider = createDataProvider();
-  return provider.createStreamMessage(streamId, role, content);
+  return provider.createStreamMessage(streamId, role, session_id, uname, content);
 }
 
 export async function getPot() {

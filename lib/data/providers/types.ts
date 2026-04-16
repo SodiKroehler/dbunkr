@@ -35,6 +35,8 @@ export interface StreamMessageRecord {
   id: string;
   stream_id: string;
   role: "user" | "assistant";
+  session_id: string | null;
+  uname: string;
   content: string;
   created_at: string;
 }
@@ -66,6 +68,8 @@ export interface DataProvider {
   createStreamMessage(
     streamId: string,
     role: "user" | "assistant",
+    session_id: string | null,
+    uname: string,
     content: string,
   ): Promise<StreamMessageRecord>;
   getPot(): Promise<PotRecord | null>;

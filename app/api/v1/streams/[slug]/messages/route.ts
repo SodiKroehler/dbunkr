@@ -53,6 +53,7 @@ export async function GET(
 type StreamBody = {
   message?: string;
   llm?: "claude" | "grok";
+  session_id?: string;
 };
 
 export async function POST(
@@ -63,6 +64,7 @@ export async function POST(
   const body = (await request.json()) as StreamBody;
   const llm = body.llm === "grok" ? "grok" : "claude";
   const incoming = (body.message ?? "").trim();
+  const sessionId = body.session_id ?? null;
   debugLog("Parsed stream POST body", {
     llm,
     incomingLength: incoming.length,
@@ -111,7 +113,15 @@ export async function POST(
     originalLength: incoming.length,
     cleanedLength: cleanedMessage.length,
   });
-  await createStreamMessage(stream.id, "user", cleanedMessage);
+  const sessionSuffix = sessionId ? sessionId.slice(-4) : "anon";
+  const userUname = `user-${sessionSuffix}`;
+  await createStreamMessage(
+    stream.id,
+    "user",
+    sessionId,
+    userUname,
+    cleanedMessage,
+  );
   debugLog("Stored user message", {
     streamId: stream.id,
     role: "user",
@@ -158,7 +168,7 @@ export async function POST(
         streamId: stream.id,
         processedLength: processed.length,
       });
-      await createStreamMessage(stream.id, "assistant", processed);
+      await createStreamMessage(stream.id, "assistant", sessionId, llm, processed);
       debugLog("Stored assistant message", {
         streamId: stream.id,
         role: "assistant",

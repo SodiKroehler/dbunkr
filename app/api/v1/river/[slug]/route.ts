@@ -13,6 +13,7 @@ import { clean_stream_message, postprocess } from "@/lib/stream/processing";
 
 type RiverBody = {
   message?: string;
+  session_id?: string;
 };
 
 export async function POST(
@@ -21,6 +22,7 @@ export async function POST(
 ) {
   const body = (await request.json()) as RiverBody;
   const incoming = (body.message ?? "").trim();
+  const sessionId = body.session_id ?? null;
 
   if (!incoming) {
     return NextResponse.json({ error: "message is required" }, { status: 400 });
@@ -45,13 +47,21 @@ export async function POST(
   }
 
   const cleanedMessage = clean_stream_message(incoming);
+  const sessionSuffix = sessionId ? sessionId.slice(-4) : "anon";
+  const userUname = `user-${sessionSuffix}`;
   const encoder = new TextEncoder();
 
   const responseStream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const tasks = streams.map(async (stream) => {
         const llm = stream.llm as LlmName;
-        await createStreamMessage(stream.id, "user", cleanedMessage);
+        await createStreamMessage(
+          stream.id,
+          "user",
+          sessionId,
+          userUname,
+          cleanedMessage,
+        );
 
         const historyRows = await listStreamMessages(stream.id);
         const history = historyRows.map((row) => ({
@@ -76,7 +86,7 @@ export async function POST(
         }
 
         const processed = await postprocess(params.slug, stream.id, fullText);
-        await createStreamMessage(stream.id, "assistant", processed);
+        await createStreamMessage(stream.id, "assistant", sessionId, llm, processed);
         controller.enqueue(
           encoder.encode(`${JSON.stringify({ llm, type: "done" })}\n`),
         );
