@@ -147,7 +147,7 @@ export class NeonDataProvider implements DataProvider {
         rq,
         blurb,
         status,
-        created_at,
+        created_at
       FROM stubs
       ORDER BY created_at DESC;
     `) as NeonStubRecordRow[];

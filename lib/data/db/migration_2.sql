@@ -28,3 +28,6 @@ CREATE TABLE stream_msgs (
 );
 
 CREATE INDEX stream_msgs_stream_idx ON stream_msgs (stream_id, created_at);
+
+
+ALTER TABLE stream_msgs ADD COLUMN session_id TEXT;
