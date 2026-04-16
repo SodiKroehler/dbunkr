@@ -7,7 +7,7 @@ function getProviderName(): string {
 
 export function createDataProvider(): DataProvider {
   const providerName = getProviderName();
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseUrl = process.env.DBUNKR_NEON_DATABASE_URL || process.env.DATABASE_URL;
 
   if (!databaseUrl) {
     throw new Error("Missing DATABASE_URL environment variable.");
