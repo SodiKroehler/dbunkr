@@ -8,10 +8,10 @@ export function Header() {
         className="text-sm tracking-wide text-white"
         style={{ fontFamily: "Helvetica, Arial, sans-serif" }}
       >
-        SEARCH
+        HOME
       </Link>
       <Link
-        href="/researhc"
+        href="/research"
         className="text-sm tracking-wide text-white"
         style={{ fontFamily: "Helvetica, Arial, sans-serif" }}
       >

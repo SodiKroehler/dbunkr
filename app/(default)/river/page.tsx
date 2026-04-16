@@ -6,8 +6,8 @@ export default async function RiverPage() {
   const [left, right] = stubs.slice(0, 2);
 
   return (
-    <main className="min-h-[calc(100vh-72px)] px-6 py-8">
-      <h1 className="mb-6 text-2xl font-semibold">River</h1>
+    <main className="min-h-[calc(100vh-72px)] px-6 py-8 bg-neutral-100">
+      <h1 className="mb-6 text-2xl font-semibold text-dark-900">River</h1>
 
       {left && right ? (
         <div className="grid gap-6 lg:grid-cols-2">

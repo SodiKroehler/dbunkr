@@ -20,30 +20,33 @@ export function ResultsList({ initialStubs }: { initialStubs: StubRecord[] }) {
   }, []);
 
   return (
-    <>
+    <section className="rounded-sm border border-stone-200 bg-stone-50 px-6 py-5">
+      <h2
+        className="mb-4 text-xs uppercase tracking-[0.18em] text-stone-500"
+        style={{ fontFamily: "Helvetica, Arial, sans-serif" }}
+      >
+        Streams
+      </h2>
       {stubs.length === 0 ? (
-        <p className="text-sm text-neutral-500">No stubs yet.</p>
+        <p className="text-sm text-stone-500">No stubs yet.</p>
       ) : (
         stubs.map((stub) => (
           <article
             key={stub.id}
-            className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"
+            className="border-t border-stone-300 py-4 first:border-t-0"
           >
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-6">
               <div className="space-y-2">
-                <h2 className="text-lg font-medium">{stub.rq}</h2>
-                <p className="text-sm text-neutral-600">{stub.blurb ?? ""}</p>
-                <p className="text-xs uppercase tracking-wide text-neutral-400">
-                  {stub.slug}
-                </p>
+                <h3 className="text-lg leading-relaxed text-stone-900">{stub.rq}</h3>
+                <p className="text-[15px] leading-7 text-stone-700">{stub.blurb ?? ""}</p>
               </div>
-              <time className="shrink-0 text-xs text-neutral-400">
+              <time className="shrink-0 pt-1 text-xs text-stone-500">
                 {new Date(stub.created_at).toLocaleDateString()}
               </time>
             </div>
           </article>
         ))
       )}
-    </>
+    </section>
   );
 }

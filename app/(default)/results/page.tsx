@@ -5,10 +5,10 @@ export default async function ResultsPage() {
   const stubs = await listStubRecords();
 
   return (
-    <main className="min-h-[calc(100vh-72px)] px-8 py-10">
-      <div className="mx-auto max-w-4xl space-y-4">
-        <h1 className="text-2xl font-semibold">Results</h1>
-        <ResultsList initialStubs={stubs} />
+    <main className="min-h-[calc(100vh-72px)] bg-stone-100 px-8 py-10">
+      <div className="max-w-4xl space-y-4">
+      <h1 className="text-2xl font-semibold text-stone-900">Results</h1>
+      <ResultsList initialStubs={stubs} />
       </div>
     </main>
   );

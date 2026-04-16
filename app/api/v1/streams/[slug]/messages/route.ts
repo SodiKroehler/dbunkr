@@ -9,10 +9,10 @@ import {
   listStreamMessages,
 } from "@/lib/data/provider";
 import {
-  build_stream_system_prompt,
   clean_stream_message,
   postprocess,
 } from "@/lib/stream/processing";
+import { build_stream_system_prompt } from "@/lib/prompts";
 
 export async function GET(
   _request: Request,

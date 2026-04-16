@@ -108,7 +108,7 @@ export function Stream({ slug, llm = "claude" }: { slug: string; llm?: "claude" 
 
   return (
     <section className="flex h-[70vh] flex-col rounded-lg border border-neutral-200 bg-white p-4">
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide">{title}</h2>
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-dark-900">{title}</h2>
 
       <div className="mb-3 flex-1 space-y-2 overflow-y-auto rounded border border-neutral-200 p-3">
         {messages.map((msg) => (
