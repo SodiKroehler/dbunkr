@@ -24,6 +24,7 @@ ${canonText}
 Before your response, output exactly one of these keywords on its own line, followed by a newline character:
 - IS_UNSEEN — the question covers material not yet in the canon but directly related to the RQ
 - IS_UNRELATED — the message does not directly follow the line of questioning about this RQ
+- IS_UNKNOWN — same routing as IS_UNRELATED (internal use only; not shown to users)
 
 Then respond. Be precise, cite reasoning, and acknowledge genuine uncertainty where it exists. 
 Do not moralize. Do not oversimplify. 

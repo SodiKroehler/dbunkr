@@ -12,7 +12,11 @@ import { sitePotCostFromMessage } from "@/lib/pot/site-cost";
 import { match } from "@/lib/match";
 import { getLlmModel, type LlmName } from "@/lib/llm/provider";
 import { build_stream_system_prompt } from "@/lib/prompts";
-import { clean_stream_message, postprocess } from "@/lib/stream/processing";
+import {
+  clean_stream_message,
+  createAssistantPublicStreamFilter,
+  postprocess,
+} from "@/lib/stream/processing";
 
 type RiverBody = {
   message?: string;
@@ -82,14 +86,23 @@ export async function POST(
           messages: history,
         });
 
-        let fullText = "";
+        const streamFilter = createAssistantPublicStreamFilter();
         for await (const chunk of result.textStream) {
-          fullText += chunk;
+          const toClient = streamFilter.push(chunk);
+          if (toClient) {
+            controller.enqueue(
+              encoder.encode(`${JSON.stringify({ llm, type: "delta", chunk: toClient })}\n`),
+            );
+          }
+        }
+        const tail = streamFilter.finalize();
+        if (tail) {
           controller.enqueue(
-            encoder.encode(`${JSON.stringify({ llm, type: "delta", chunk })}\n`),
+            encoder.encode(`${JSON.stringify({ llm, type: "delta", chunk: tail })}\n`),
           );
         }
 
+        const fullText = streamFilter.accumulated;
         const cleanedOutput = clean_stream_message(fullText);
 
         if (cleanedOutput.tag === "unrelated") {

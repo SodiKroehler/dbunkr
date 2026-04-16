@@ -11,6 +11,7 @@ import {
 import { sitePotCostFromMessage } from "@/lib/pot/site-cost";
 import {
   clean_stream_message,
+  createAssistantPublicStreamFilter,
   postprocess,
 } from "@/lib/stream/processing";
 import { build_stream_system_prompt } from "@/lib/prompts";
@@ -165,37 +166,70 @@ export async function POST(
         message: error instanceof Error ? error.message : String(error),
       });
     },
-    onFinish: async ({ text }) => {
-      debugLog("LLM stream finished", {
-        streamId: stream.id,
-        textLength: text.length,
-      });
-      const cleanedOutput = clean_stream_message(text);
-      const processed = await postprocess(
-        params.slug,
-        stream.id,
-        cleanedOutput.content,
-      );
-      debugLog("Postprocess complete", {
-        streamId: stream.id,
-        processedLength: processed.length,
-      });
-      const messageType = cleanedOutput.tag === "unseen" ? "proposed" : "ephemeral";
-      await createStreamMessage(
-        stream.id,
-        "assistant",
-        sessionId,
-        llm,
-        messageType,
-        processed,
-      );
-      debugLog("Stored assistant message", {
-        streamId: stream.id,
-        role: "assistant",
-      });
+  });
+
+  const streamFilter = createAssistantPublicStreamFilter();
+  const encoder = new TextEncoder();
+
+  const responseBody = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        for await (const chunk of result.textStream) {
+          const toClient = streamFilter.push(chunk);
+          if (toClient) {
+            controller.enqueue(encoder.encode(toClient));
+          }
+        }
+        const tail = streamFilter.finalize();
+        if (tail) {
+          controller.enqueue(encoder.encode(tail));
+        }
+
+        const raw = streamFilter.accumulated;
+        debugLog("LLM stream finished", {
+          streamId: stream.id,
+          textLength: raw.length,
+        });
+        const cleanedOutput = clean_stream_message(raw);
+        const processed = await postprocess(
+          params.slug,
+          stream.id,
+          cleanedOutput.content,
+        );
+        debugLog("Postprocess complete", {
+          streamId: stream.id,
+          processedLength: processed.length,
+        });
+        const messageType = cleanedOutput.tag === "unseen" ? "proposed" : "ephemeral";
+        await createStreamMessage(
+          stream.id,
+          "assistant",
+          sessionId,
+          llm,
+          messageType,
+          processed,
+        );
+        debugLog("Stored assistant message", {
+          streamId: stream.id,
+          role: "assistant",
+        });
+      } catch (error) {
+        debugLog("Stream pipeline error", {
+          streamId: stream.id,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      } finally {
+        controller.close();
+      }
     },
   });
 
-  debugLog("Returning text stream response", { streamId: stream.id });
-  return result.toTextStreamResponse();
+  debugLog("Returning filtered text stream response", { streamId: stream.id });
+  return new Response(responseBody, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
 }

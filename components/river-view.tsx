@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Stream } from "@/components/stream";
 import { triggerNovelResearchQuestionProcess } from "@/lib/processes/novel-rq";
@@ -23,20 +23,24 @@ async function sendToRiver(
     user_message: string;
     suggestions: Array<{ slug: string; rq: string }>;
   }) => void,
-) {
+): Promise<"ok" | "pot_blocked" | "error"> {
   const response = await fetch(`/api/v1/river/${slug}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message, session_id: sessionId }),
   });
 
+  if (response.status === 402) {
+    return "pot_blocked";
+  }
+
   if (!response.ok) {
-    throw new Error(`Failed to send to river ${slug}.`);
+    return "error";
   }
 
   if (!response.body) {
     await response.text();
-    return;
+    return "ok";
   }
 
   const reader = response.body.getReader();
@@ -85,6 +89,8 @@ async function sendToRiver(
       }
     }
   }
+
+  return "ok";
 }
 
 export function RiverView({ slug, className }: RiverViewProps) {
@@ -112,6 +118,24 @@ export function RiverView({ slug, className }: RiverViewProps) {
   const [novelModal, setNovelModal] = useState<{
     userMessage: string;
   } | null>(null);
+  const [potDepleted, setPotDepleted] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/v1/pot")
+      .then((r) => r.json())
+      .then((body: { data?: { site?: { tokens_remaining?: number } } }) => {
+        if (cancelled) return;
+        const t = body.data?.site?.tokens_remaining;
+        setPotDepleted(t !== undefined && t <= 0);
+      })
+      .catch(() => {
+        if (!cancelled) setPotDepleted(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey]);
 
   async function onSend() {
     const trimmed = message.trim();
@@ -130,7 +154,19 @@ export function RiverView({ slug, className }: RiverViewProps) {
       setLiveAssistantByLlm({ claude: "", grok: "" });
       setLiveNovelByLlm({ claude: false, grok: false });
       let hadUnrelated = false;
-      await sendToRiver(
+      let novelFlowHandled = false;
+
+      const openNovelQuestionFlow = (userMessage: string) => {
+        if (novelFlowHandled) return;
+        novelFlowHandled = true;
+        setUnrelatedModal(null);
+        queueMicrotask(() => {
+          setNovelModal({ userMessage });
+          void triggerNovelResearchQuestionProcess(userMessage);
+        });
+      };
+
+      const riverResult = await sendToRiver(
         slug,
         trimmed,
         sessionId,
@@ -144,11 +180,14 @@ export function RiverView({ slug, className }: RiverViewProps) {
           setLiveNovelByLlm((prev) => ({ ...prev, [llm]: novel }));
         },
         (payload) => {
-          if (!payload.response.trim()) {
-            setNovelModal({ userMessage: payload.user_message });
-            void triggerNovelResearchQuestionProcess(payload.user_message);
+          const emptyAssistant = !payload.response.trim();
+          const noSimilarRqs = payload.suggestions.length === 0;
+
+          if (emptyAssistant || noSimilarRqs) {
+            openNovelQuestionFlow(payload.user_message);
             return;
           }
+
           hadUnrelated = true;
           setUnrelatedModal((prev) => {
             const existingEntries = prev?.entries ?? [];
@@ -166,13 +205,29 @@ export function RiverView({ slug, className }: RiverViewProps) {
           });
         },
       );
+
+      if (riverResult === "pot_blocked") {
+        setPotDepleted(true);
+        return;
+      }
+      if (riverResult === "error") {
+        throw new Error(`Failed to send to river ${slug}.`);
+      }
+
       setMessage("");
-      if (!hadUnrelated) {
+      if (!hadUnrelated && !novelFlowHandled) {
         setLiveUserMessage(null);
         setLiveAssistantByLlm({ claude: "", grok: "" });
         setLiveNovelByLlm({ claude: false, grok: false });
         setRefreshKey((prev) => prev + 1);
       }
+      void fetch("/api/v1/pot")
+        .then((r) => r.json())
+        .then((body: { data?: { site?: { tokens_remaining?: number } } }) => {
+          const t = body.data?.site?.tokens_remaining;
+          setPotDepleted(t !== undefined && t <= 0);
+        })
+        .catch(() => {});
     } finally {
       setSending(false);
     }
@@ -216,6 +271,12 @@ export function RiverView({ slug, className }: RiverViewProps) {
           liveNovel={liveNovelByLlm.grok}
         />
       </div>
+
+      {potDepleted ? (
+        <p className="mt-3 shrink-0 text-center text-sm italic text-amber-900">
+          Please make a site contribution to get the LLM&apos;s working again!
+        </p>
+      ) : null}
 
       <form
         onSubmit={(event) => {
@@ -287,10 +348,8 @@ export function RiverView({ slug, className }: RiverViewProps) {
               />
             ))}
           </div>
-          <div className="relative w-full max-w-xl rounded-lg bg-white p-6 text-black">
-            <h3 className="text-lg font-semibold">
-              You&apos;ve found a novel research question (for our site).
-            </h3>
+          <div className="relative z-10 w-full max-w-xl rounded-lg bg-white p-6 text-black shadow-lg">
+            <h3 className="text-lg font-semibold">You asked a novel question!</h3>
             <p className="mt-3 text-sm text-neutral-700">
               User request: {novelModal.userMessage}
             </p>
