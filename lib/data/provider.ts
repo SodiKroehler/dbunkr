@@ -1,5 +1,9 @@
 import { NeonDataProvider } from "@/lib/data/providers/neonProvider";
-import type { DataProvider, StreamSearchInput } from "@/lib/data/providers/types";
+import type {
+  DataProvider,
+  StreamSearchInput,
+  StubVoteType,
+} from "@/lib/data/providers/types";
 
 function getProviderName(): string {
   return process.env.DATA_PROVIDER?.trim().toLowerCase() || "neon";
@@ -92,4 +96,9 @@ export async function createStreamMessage(
 export async function getPot() {
   const provider = createDataProvider();
   return provider.getPot();
+}
+
+export async function applyStubVoteRecord(stubId: string, voteType: StubVoteType) {
+  const provider = createDataProvider();
+  return provider.applyStubVote(stubId, voteType);
 }

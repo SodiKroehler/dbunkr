@@ -8,6 +8,7 @@ import type {
   StreamRecord,
   StreamSearchInput,
   StubRecord,
+  StubVoteType,
 } from "@/lib/data/providers/types";
 
 const INIT_SCHEMA_SQL = `
@@ -403,6 +404,67 @@ export class NeonDataProvider implements DataProvider {
     `) as NeonStubRecordRow[];
 
     return mapRow(rows[0]);
+  }
+
+  async applyStubVote(stubId: string, voteType: StubVoteType): Promise<StubRecord | null> {
+    let rows: NeonStubRecordRow[];
+    if (voteType === "close_forward") {
+      rows = (await this.sql`
+        UPDATE stubs
+        SET close_votes = close_votes + 1
+        WHERE id = ${stubId}
+        RETURNING
+          id,
+          slug,
+          rq,
+          blurb,
+          left_truth,
+          right_truth,
+          center_truth,
+          close_votes,
+          importance_level,
+          status,
+          created_at
+      `) as NeonStubRecordRow[];
+    } else if (voteType === "importance_forward") {
+      rows = (await this.sql`
+        UPDATE stubs
+        SET importance_level = importance_level + 1
+        WHERE id = ${stubId}
+        RETURNING
+          id,
+          slug,
+          rq,
+          blurb,
+          left_truth,
+          right_truth,
+          center_truth,
+          close_votes,
+          importance_level,
+          status,
+          created_at
+      `) as NeonStubRecordRow[];
+    } else {
+      rows = (await this.sql`
+        UPDATE stubs
+        SET importance_level = GREATEST(importance_level - 1, 0)
+        WHERE id = ${stubId}
+        RETURNING
+          id,
+          slug,
+          rq,
+          blurb,
+          left_truth,
+          right_truth,
+          center_truth,
+          close_votes,
+          importance_level,
+          status,
+          created_at
+      `) as NeonStubRecordRow[];
+    }
+
+    return rows[0] ? mapRow(rows[0]) : null;
   }
 
   async getStreamBySlug(

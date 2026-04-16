@@ -1,16 +1,45 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { StubRecord } from "@/lib/data/providers/types";
+import { useEffect, useMemo, useState } from "react";
+import type { StubRecord, StubVoteType } from "@/lib/data/providers/types";
 import { BiddableStub } from "@/components/biddable-stub";
 
 export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
+  const [localStubs, setLocalStubs] = useState<StubRecord[]>(stubs);
   const [selectedId, setSelectedId] = useState<string | null>(stubs[0]?.id ?? null);
+  const [votePending, setVotePending] = useState(false);
+
+  useEffect(() => {
+    setLocalStubs(stubs);
+    setSelectedId((prev) => {
+      if (prev && stubs.some((s) => s.id === prev)) return prev;
+      return stubs[0]?.id ?? null;
+    });
+  }, [stubs]);
 
   const selected = useMemo(
-    () => stubs.find((stub) => stub.id === selectedId) ?? stubs[0] ?? null,
-    [stubs, selectedId],
+    () => localStubs.find((stub) => stub.id === selectedId) ?? localStubs[0] ?? null,
+    [localStubs, selectedId],
   );
+
+  async function postVote(voteType: StubVoteType) {
+    if (!selected || votePending) return;
+    setVotePending(true);
+    try {
+      const response = await fetch("/api/v1/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stubId: selected.id, voteType }),
+      });
+      if (!response.ok) return;
+      const payload = (await response.json()) as { data?: StubRecord };
+      const updated = payload.data;
+      if (!updated) return;
+      setLocalStubs((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+    } finally {
+      setVotePending(false);
+    }
+  }
 
   if (stubs.length === 0) {
     return <p className="text-sm text-neutral-500">No open research questions yet.</p>;
@@ -20,7 +49,7 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
     <section className="grid h-[calc(100vh-160px)] min-h-[520px] grid-cols-1 gap-4 lg:grid-cols-[3fr_2fr]">
       <div className="overflow-y-auto rounded-lg border border-neutral-200 bg-neutral-50 p-4">
         <div className="grid gap-3">
-          {stubs.map((stub) => (
+          {localStubs.map((stub) => (
             <BiddableStub
               key={stub.id}
               stub={stub}
@@ -63,7 +92,9 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
                   <button
                     type="button"
                     aria-label="Upvote close votes"
-                    className="rounded border border-neutral-300 px-2 py-1 text-sm text-neutral-700 hover:bg-neutral-50"
+                    disabled={votePending}
+                    onClick={() => void postVote("close_forward")}
+                    className="rounded border border-neutral-300 px-2 py-1 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
                   >
                     ↑
                   </button>
@@ -82,14 +113,18 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
                     <button
                       type="button"
                       aria-label="Upvote importance level"
-                      className="rounded border border-neutral-300 px-2 py-1 text-sm text-neutral-700 hover:bg-neutral-50"
+                      disabled={votePending}
+                      onClick={() => void postVote("importance_forward")}
+                      className="rounded border border-neutral-300 px-2 py-1 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
                     >
                       ↑
                     </button>
                     <button
                       type="button"
                       aria-label="Downvote importance level"
-                      className="rounded border border-neutral-300 px-2 py-1 text-sm text-neutral-700 hover:bg-neutral-50"
+                      disabled={votePending}
+                      onClick={() => void postVote("importance_backward")}
+                      className="rounded border border-neutral-300 px-2 py-1 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
                     >
                       ↓
                     </button>

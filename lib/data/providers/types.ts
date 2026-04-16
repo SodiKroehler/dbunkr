@@ -1,5 +1,17 @@
 export type DataProviderName = "neon";
 
+/** Stub counter updates via POST /api/v1/vote (no separate votes table). */
+export const STUB_VOTE_TYPES = [
+  "close_forward",
+  "importance_forward",
+  "importance_backward",
+] as const;
+export type StubVoteType = (typeof STUB_VOTE_TYPES)[number];
+
+export function isStubVoteType(value: string): value is StubVoteType {
+  return (STUB_VOTE_TYPES as readonly string[]).includes(value);
+}
+
 export interface StubRecord {
   id: string;
   slug: string;
@@ -72,6 +84,7 @@ export interface DataProvider {
   matchStubs(query: string): Promise<StubRecord[]>;
   getStubBySlug(slug: string): Promise<StubRecord | null>;
   createStubRecord(input: CreateStubRecordInput): Promise<StubRecord>;
+  applyStubVote(stubId: string, voteType: StubVoteType): Promise<StubRecord | null>;
   getStreamBySlug(slug: string, llm?: "claude" | "grok"): Promise<StreamRecord | null>;
   listStreamsBySlug(slug: string): Promise<StreamRecord[]>;
   getStreamById(streamId: string): Promise<StreamRecord | null>;
