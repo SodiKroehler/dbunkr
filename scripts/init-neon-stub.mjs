@@ -9,19 +9,40 @@ if (!databaseUrl) {
 const sql = neon(databaseUrl);
 
 await sql.query(`
-CREATE SCHEMA IF NOT EXISTS stub;
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 `);
 
 await sql.query(`
-CREATE TABLE IF NOT EXISTS stub.entries (
-  id BIGSERIAL PRIMARY KEY,
-  title TEXT NOT NULL,
-  description TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  left_agree INTEGER NOT NULL DEFAULT 0,
-  right_agree INTEGER NOT NULL DEFAULT 0,
-  moderate_agree INTEGER NOT NULL DEFAULT 0
+CREATE TABLE IF NOT EXISTS stubs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug TEXT UNIQUE NOT NULL,
+  rq TEXT NOT NULL,
+  blurb TEXT,
+  status TEXT NOT NULL DEFAULT 'proposed' CHECK (status IN ('seeded', 'proposed', 'approved')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 `);
 
-console.log("Neon schema initialized: stub.entries");
+await sql.query(`
+CREATE TABLE IF NOT EXISTS streams (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stub_id UUID NOT NULL REFERENCES stubs(id) ON DELETE CASCADE,
+  llm TEXT NOT NULL CHECK (llm IN ('claude', 'grok')),
+  canon JSONB NOT NULL DEFAULT '[]',
+  river TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (stub_id, llm)
+);
+`);
+
+await sql.query(`
+CREATE TABLE IF NOT EXISTS stream_msgs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stream_id UUID NOT NULL REFERENCES streams(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+`);
+
+console.log("Neon schema initialized: stubs, streams, stream_msgs");

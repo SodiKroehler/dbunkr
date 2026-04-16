@@ -1,26 +1,64 @@
 export type DataProviderName = "neon";
 
 export interface StubRecord {
-  id: number;
-  title: string;
-  description: string;
+  id: string;
+  slug: string;
+  rq: string;
+  blurb: string | null;
+  status: "seeded" | "proposed" | "approved";
   created_at: string;
-  left_agree: number;
-  right_agree: number;
-  moderate_agree: number;
 }
 
 export interface CreateStubRecordInput {
-  title: string;
-  description: string;
-  left_agree?: number;
-  right_agree?: number;
-  moderate_agree?: number;
+  slug: string;
+  rq: string;
+  blurb?: string | null;
+  status?: "seeded" | "proposed" | "approved";
+}
+
+export interface StreamCanonMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
+
+export interface StreamRecord {
+  id: string;
+  stub_id: string;
+  stub_slug: string;
+  llm: "claude" | "grok";
+  canon: StreamCanonMessage[];
+  river: string;
+  created_at: string;
+}
+
+export interface StreamMessageRecord {
+  id: string;
+  stream_id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+}
+
+export interface StreamSearchInput {
+  stream_id?: string;
+  slug_id?: string;
+  river?: string;
 }
 
 export interface DataProvider {
   name: DataProviderName;
   initStubSchema(): Promise<void>;
   listStubRecords(): Promise<StubRecord[]>;
+  getStubBySlug(slug: string): Promise<StubRecord | null>;
   createStubRecord(input: CreateStubRecordInput): Promise<StubRecord>;
+  getStreamBySlug(slug: string, llm?: "claude" | "grok"): Promise<StreamRecord | null>;
+  getStreamById(streamId: string): Promise<StreamRecord | null>;
+  searchStreams(input: StreamSearchInput): Promise<StreamRecord[]>;
+  listStreams(limit?: number): Promise<StreamRecord[]>;
+  listStreamMessages(streamId: string): Promise<StreamMessageRecord[]>;
+  createStreamMessage(
+    streamId: string,
+    role: "user" | "assistant",
+    content: string,
+  ): Promise<StreamMessageRecord>;
 }

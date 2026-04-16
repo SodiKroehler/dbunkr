@@ -18,8 +18,11 @@ export default async function ResultsPage() {
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-2">
-                  <h2 className="text-lg font-medium">{stub.title}</h2>
-                  <p className="text-sm text-neutral-600">{stub.description}</p>
+                  <h2 className="text-lg font-medium">{stub.rq}</h2>
+                  <p className="text-sm text-neutral-600">{stub.blurb ?? ""}</p>
+                  <p className="text-xs uppercase tracking-wide text-neutral-400">
+                    {stub.slug}
+                  </p>
                 </div>
                 <time className="shrink-0 text-xs text-neutral-400">
                   {new Date(stub.created_at).toLocaleDateString()}
