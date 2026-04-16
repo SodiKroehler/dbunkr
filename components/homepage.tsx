@@ -51,7 +51,7 @@ export function Homepage() {
               Search
           </button>
           <button
-            onClick={() => router.push("/results")}
+            onClick={() => router.push("/river")}
             className="rounded-md border border-neutral-300 bg-white px-5 py-2 text-sm text-black hover:bg-neutral-100"
           >
             I&apos;m Feeling Studious

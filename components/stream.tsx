@@ -46,12 +46,12 @@ export function Stream({
   const title = useMemo(() => `${slug} (${llm})`, [slug, llm]);
 
   return (
-    <section className="flex h-[70vh] flex-col rounded-lg border border-neutral-200 bg-white p-4">
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-dark-900">{title}</h2>
+    <section className="flex h-[70vh] flex-col rounded-lg border border-neutral-200 bg-white p-4 text-black">
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-black">{title}</h2>
 
-      <div className="flex-1 space-y-2 overflow-y-auto rounded border border-neutral-200 p-3">
+      <div className="flex-1 space-y-2 overflow-y-auto rounded border border-neutral-200 p-3 text-black">
         {messages.map((msg) => (
-          <div key={msg.id} className="text-sm">
+          <div key={msg.id} className="text-sm text-black">
             <span className="mr-2 font-semibold uppercase">{msg.role}:</span>
             <span>{msg.content}</span>
           </div>

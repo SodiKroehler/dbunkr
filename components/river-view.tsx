@@ -62,14 +62,14 @@ export function RiverView({ slug }: RiverViewProps) {
         <input
           value={message}
           onChange={(event) => setMessage(event.target.value)}
-          className="flex-1 rounded border border-neutral-300 bg-white px-3 py-2 text-sm"
-          placeholder="Send to both streams..."
+          className="flex-1 rounded border border-neutral-300 bg-white px-3 py-2 text-sm text-black"
+          placeholder="speak ur truth sista"
         />
         <button
           type="button"
           onClick={onSend}
           disabled={sending}
-          className="rounded border border-neutral-300 bg-white px-4 py-2 text-sm"
+          className="rounded border border-neutral-300 bg-white px-4 py-2 text-sm text-black hover:bg-neutral-100 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-500"
         >
           {sending ? "Sending..." : "Send"}
         </button>
