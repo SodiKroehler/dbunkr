@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import * as postingsByIdRoute from "@/app/api/v1/postings/[id]/route";
-import * as bidsRoute from "@/app/api/v1/postings/[id]/bids/route";
+import * as postingBidsRoute from "@/app/api/v1/postings/[id]/bids/route";
 import * as bidVoteRoute from "@/app/api/v1/postings/[id]/bids/[bid_id]/vote/route";
 import * as postingsRoute from "@/app/api/v1/postings/route";
 import * as potRoute from "@/app/api/v1/pot/route";
@@ -11,6 +11,7 @@ import * as stubsBySlugRoute from "@/app/api/v1/stubs/[slug]/route";
 import * as stubVotesRoute from "@/app/api/v1/stubs/[slug]/votes/route";
 import * as stubsRoute from "@/app/api/v1/stubs/route";
 import * as voteRoute from "@/app/api/v1/vote/route";
+import * as stubBidsRoute from "@/app/api/v1/bids/route";
 
 async function expectListResponse(responsePromise: Promise<Response>) {
   const response = await responsePromise;
@@ -35,7 +36,15 @@ test("GET /api/v1/stubs returns list format", async () => {
 });
 
 test("POST /api/v1/stubs returns item format", async () => {
-  await expectItemResponse(stubsRoute.POST());
+  await expectItemResponse(
+    stubsRoute.POST(
+      new Request("http://localhost/api/v1/stubs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: "" }),
+      }),
+    ),
+  );
 });
 
 test("GET /api/v1/stubs/[slug] returns item format", async () => {
@@ -70,6 +79,28 @@ test("POST /api/v1/vote rejects invalid voteType", async () => {
   assert.ok("error" in body);
 });
 
+test("GET /api/v1/bids requires stubId", async () => {
+  const response = await stubBidsRoute.GET(
+    new Request("http://localhost/api/v1/bids"),
+  );
+  assert.equal(response.status, 400);
+});
+
+test("POST /api/v1/bids requires orcid", async () => {
+  const response = await stubBidsRoute.POST(
+    new Request("http://localhost/api/v1/bids", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stubId: "00000000-0000-0000-0000-000000000001",
+      }),
+    }),
+  );
+  assert.equal(response.status, 400);
+  const body = await response.json();
+  assert.ok("error" in body);
+});
+
 test("GET /api/v1/postings returns list format", async () => {
   await expectListResponse(postingsRoute.GET());
 });
@@ -79,7 +110,7 @@ test("GET /api/v1/postings/[id] returns item format", async () => {
 });
 
 test("POST /api/v1/postings/[id]/bids returns item format", async () => {
-  await expectItemResponse(bidsRoute.POST());
+  await expectItemResponse(postingBidsRoute.POST());
 });
 
 test("POST /api/v1/postings/[id]/bids/[bid_id]/vote returns item format", async () => {

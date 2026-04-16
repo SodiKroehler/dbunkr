@@ -19,3 +19,21 @@ ALTER TABLE stubs ADD CONSTRAINT stubs_status_check
 ALTER TABLE stubs 
   ADD COLUMN close_votes INTEGER NOT NULL DEFAULT 0,
   ADD COLUMN importance_level INTEGER NOT NULL DEFAULT 0;
+
+
+
+  DROP TABLE IF EXISTS bids CASCADE;
+
+CREATE TABLE bids (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stub_id UUID NOT NULL REFERENCES stubs(id) ON DELETE CASCADE,
+  orcid TEXT NOT NULL,
+  name TEXT NOT NULL,
+  website TEXT,
+  pitch TEXT NOT NULL,
+  votes_for INTEGER NOT NULL DEFAULT 0,
+  votes_against INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX bids_stub_idx ON bids (stub_id);

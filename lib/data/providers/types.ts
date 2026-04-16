@@ -76,6 +76,28 @@ export interface PotRecord {
   updated_at: string;
 }
 
+export interface BidRecord {
+  id: string;
+  stub_id: string;
+  orcid: string;
+  name: string;
+  website: string | null;
+  pitch: string;
+  votes_for: number;
+  votes_against: number;
+  created_at: string;
+}
+
+export interface CreateBidInput {
+  stub_id: string;
+  orcid: string;
+  name?: string;
+  website?: string | null;
+  pitch?: string;
+  votes_for?: number;
+  votes_against?: number;
+}
+
 export interface DataProvider {
   name: DataProviderName;
   initStubSchema(): Promise<void>;
@@ -100,4 +122,6 @@ export interface DataProvider {
     content: string,
   ): Promise<StreamMessageRecord>;
   getPot(): Promise<PotRecord | null>;
+  listBidsByStubId(stubId: string): Promise<BidRecord[]>;
+  createBid(input: CreateBidInput): Promise<BidRecord>;
 }

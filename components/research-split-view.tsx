@@ -1,13 +1,28 @@
 "use client";
 
+import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
-import type { StubRecord, StubVoteType } from "@/lib/data/providers/types";
+import type { BidRecord, StubRecord, StubVoteType } from "@/lib/data/providers/types";
 import { BiddableStub } from "@/components/biddable-stub";
+
+const emptyBidForm = {
+  orcid: "",
+  name: "",
+  website: "",
+  pitch: "",
+  votes_for: "",
+  votes_against: "",
+};
 
 export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
   const [localStubs, setLocalStubs] = useState<StubRecord[]>(stubs);
   const [selectedId, setSelectedId] = useState<string | null>(stubs[0]?.id ?? null);
   const [votePending, setVotePending] = useState(false);
+  const [bids, setBids] = useState<BidRecord[]>([]);
+  const [bidsLoading, setBidsLoading] = useState(false);
+  const [bidModalOpen, setBidModalOpen] = useState(false);
+  const [bidForm, setBidForm] = useState(emptyBidForm);
+  const [bidSubmitting, setBidSubmitting] = useState(false);
 
   useEffect(() => {
     setLocalStubs(stubs);
@@ -21,6 +36,33 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
     () => localStubs.find((stub) => stub.id === selectedId) ?? localStubs[0] ?? null,
     [localStubs, selectedId],
   );
+
+  useEffect(() => {
+    if (!selected?.id) {
+      setBids([]);
+      return;
+    }
+
+    let cancelled = false;
+    setBidsLoading(true);
+    fetch(`/api/v1/bids?stubId=${encodeURIComponent(selected.id)}`)
+      .then((r) => r.json())
+      .then((body: { data?: BidRecord[] }) => {
+        if (!cancelled && Array.isArray(body.data)) {
+          setBids(body.data);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setBids([]);
+      })
+      .finally(() => {
+        if (!cancelled) setBidsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selected?.id]);
 
   async function postVote(voteType: StubVoteType) {
     if (!selected || votePending) return;
@@ -38,6 +80,44 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
       setLocalStubs((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
     } finally {
       setVotePending(false);
+    }
+  }
+
+  async function submitBid(e: FormEvent) {
+    e.preventDefault();
+    if (!selected || bidSubmitting) return;
+    const orcid = bidForm.orcid.trim();
+    if (!orcid) return;
+
+    const vf =
+      bidForm.votes_for.trim() === "" ? undefined : Number(bidForm.votes_for);
+    const va =
+      bidForm.votes_against.trim() === "" ? undefined : Number(bidForm.votes_against);
+
+    setBidSubmitting(true);
+    try {
+      const response = await fetch("/api/v1/bids", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stubId: selected.id,
+          orcid,
+          name: bidForm.name.trim() || undefined,
+          website: bidForm.website.trim() || null,
+          pitch: bidForm.pitch.trim() || undefined,
+          votes_for: vf !== undefined && Number.isFinite(vf) ? vf : undefined,
+          votes_against: va !== undefined && Number.isFinite(va) ? va : undefined,
+        }),
+      });
+      if (!response.ok) return;
+      const payload = (await response.json()) as { data?: BidRecord };
+      const bid = payload.data;
+      if (!bid) return;
+      setBids((prev) => [bid, ...prev]);
+      setBidModalOpen(false);
+      setBidForm({ ...emptyBidForm });
+    } finally {
+      setBidSubmitting(false);
     }
   }
 
@@ -132,9 +212,175 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
                 </div>
               </div>
             </div>
+
+            <div className="border-t border-neutral-200 pt-4">
+              <h2 className="text-lg font-semibold text-neutral-900">Bids</h2>
+              <div className="relative mt-3 min-h-[4.5rem] pb-12">
+                {bidsLoading ? (
+                  <p className="text-xs text-neutral-500">Loading bids…</p>
+                ) : bids.length === 0 ? (
+                  <p className="text-xs text-neutral-500">No bids yet.</p>
+                ) : (
+                  <ul className="space-y-2 text-sm">
+                    {bids.map((b) => (
+                      <li
+                        key={b.id}
+                        className="rounded-md border border-neutral-100 bg-neutral-50/90 p-3"
+                      >
+                        <div className="font-medium text-neutral-900">{b.name || "—"}</div>
+                        <div className="mt-1 text-xs text-neutral-600">ORCID: {b.orcid}</div>
+                        {b.website ? (
+                          <a
+                            href={b.website.startsWith("http") ? b.website : `https://${b.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1 block text-xs text-blue-600 hover:underline"
+                          >
+                            {b.website}
+                          </a>
+                        ) : null}
+                        {b.pitch ? (
+                          <p className="mt-2 text-xs leading-relaxed text-neutral-700">{b.pitch}</p>
+                        ) : null}
+                        <div className="mt-2 flex gap-3 text-xs text-neutral-500">
+                          <span>For: {b.votes_for}</span>
+                          <span>Against: {b.votes_against}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <button
+                  type="button"
+                  aria-label="Add bid"
+                  onClick={() => {
+                    setBidForm({ ...emptyBidForm });
+                    setBidModalOpen(true);
+                  }}
+                  className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full border border-neutral-300 text-lg font-light leading-none text-neutral-700 shadow-sm hover:bg-neutral-50"
+                >
+                  +
+                </button>
+              </div>
+            </div>
           </div>
         ) : null}
       </aside>
+
+      {bidModalOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          role="presentation"
+          onClick={() => setBidModalOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bid-modal-title"
+            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-neutral-200 bg-white p-5 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="bid-modal-title" className="text-lg font-semibold text-neutral-900">
+              New bid
+            </h3>
+            <p className="mt-1 text-xs text-neutral-500">ORCID is required; other fields are optional.</p>
+            <form onSubmit={(e) => void submitBid(e)} className="mt-4 space-y-3">
+              <div>
+                <label htmlFor="bid-orcid" className="text-xs font-medium text-neutral-700">
+                  ORCID
+                </label>
+                <input
+                  id="bid-orcid"
+                  value={bidForm.orcid}
+                  onChange={(e) => setBidForm((f) => ({ ...f, orcid: e.target.value }))}
+                  className="mt-1 w-full rounded border border-neutral-300 px-2 py-1.5 text-sm"
+                  placeholder="0000-0002-1825-0097"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="bid-name" className="text-xs font-medium text-neutral-700">
+                  Name
+                </label>
+                <input
+                  id="bid-name"
+                  value={bidForm.name}
+                  onChange={(e) => setBidForm((f) => ({ ...f, name: e.target.value }))}
+                  className="mt-1 w-full rounded border border-neutral-300 px-2 py-1.5 text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="bid-website" className="text-xs font-medium text-neutral-700">
+                  Website
+                </label>
+                <input
+                  id="bid-website"
+                  value={bidForm.website}
+                  onChange={(e) => setBidForm((f) => ({ ...f, website: e.target.value }))}
+                  className="mt-1 w-full rounded border border-neutral-300 px-2 py-1.5 text-sm"
+                  placeholder="https://"
+                />
+              </div>
+              <div>
+                <label htmlFor="bid-pitch" className="text-xs font-medium text-neutral-700">
+                  Pitch
+                </label>
+                <textarea
+                  id="bid-pitch"
+                  value={bidForm.pitch}
+                  onChange={(e) => setBidForm((f) => ({ ...f, pitch: e.target.value }))}
+                  rows={4}
+                  className="mt-1 w-full rounded border border-neutral-300 px-2 py-1.5 text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="bid-votes-for" className="text-xs font-medium text-neutral-700">
+                    Votes for
+                  </label>
+                  <input
+                    id="bid-votes-for"
+                    type="number"
+                    value={bidForm.votes_for}
+                    onChange={(e) => setBidForm((f) => ({ ...f, votes_for: e.target.value }))}
+                    className="mt-1 w-full rounded border border-neutral-300 px-2 py-1.5 text-sm"
+                    min={0}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="bid-votes-against" className="text-xs font-medium text-neutral-700">
+                    Votes against
+                  </label>
+                  <input
+                    id="bid-votes-against"
+                    type="number"
+                    value={bidForm.votes_against}
+                    onChange={(e) => setBidForm((f) => ({ ...f, votes_against: e.target.value }))}
+                    className="mt-1 w-full rounded border border-neutral-300 px-2 py-1.5 text-sm"
+                    min={0}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setBidModalOpen(false)}
+                  className="rounded border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={bidSubmitting}
+                  className="rounded bg-neutral-900 px-3 py-1.5 text-sm text-white hover:bg-neutral-800 disabled:opacity-50"
+                >
+                  {bidSubmitting ? "Saving…" : "Submit"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

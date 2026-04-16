@@ -1,5 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import type {
+  BidRecord,
+  CreateBidInput,
   CreateStubRecordInput,
   DataProvider,
   StreamCanonMessage,
@@ -101,6 +103,35 @@ type NeonPotRow = {
   tokens_remaining: number | string;
   updated_at: string | Date;
 };
+
+type NeonBidRow = {
+  id: string;
+  stub_id: string;
+  orcid: string;
+  name: string;
+  website: string | null;
+  pitch: string;
+  votes_for: number | string;
+  votes_against: number | string;
+  created_at: string | Date;
+};
+
+function mapBidRow(row: NeonBidRow): BidRecord {
+  return {
+    id: row.id,
+    stub_id: row.stub_id,
+    orcid: row.orcid,
+    name: row.name,
+    website: row.website,
+    pitch: row.pitch,
+    votes_for: Number(row.votes_for),
+    votes_against: Number(row.votes_against),
+    created_at:
+      row.created_at instanceof Date
+        ? row.created_at.toISOString()
+        : String(row.created_at),
+  };
+}
 
 function mapStreamCanon(input: unknown): StreamCanonMessage[] {
   if (!Array.isArray(input)) return [];
@@ -651,6 +682,67 @@ export class NeonDataProvider implements DataProvider {
     `) as NeonPotRow[];
 
     return rows[0] ? mapPotRow(rows[0]) : null;
+  }
+
+  async listBidsByStubId(stubId: string): Promise<BidRecord[]> {
+    const rows = (await this.sql`
+      SELECT
+        id,
+        stub_id,
+        orcid,
+        name,
+        website,
+        pitch,
+        votes_for,
+        votes_against,
+        created_at
+      FROM bids
+      WHERE stub_id = ${stubId}
+      ORDER BY created_at DESC;
+    `) as NeonBidRow[];
+
+    return rows.map(mapBidRow);
+  }
+
+  async createBid(input: CreateBidInput): Promise<BidRecord> {
+    const name = (input.name ?? "").trim() || "";
+    const pitch = (input.pitch ?? "").trim() || "";
+    const website = input.website?.trim() || null;
+    const votesFor = input.votes_for ?? 0;
+    const votesAgainst = input.votes_against ?? 0;
+
+    const rows = (await this.sql`
+      INSERT INTO bids (
+        stub_id,
+        orcid,
+        name,
+        website,
+        pitch,
+        votes_for,
+        votes_against
+      )
+      VALUES (
+        ${input.stub_id},
+        ${input.orcid.trim()},
+        ${name},
+        ${website},
+        ${pitch},
+        ${votesFor},
+        ${votesAgainst}
+      )
+      RETURNING
+        id,
+        stub_id,
+        orcid,
+        name,
+        website,
+        pitch,
+        votes_for,
+        votes_against,
+        created_at;
+    `) as NeonBidRow[];
+
+    return mapBidRow(rows[0]);
   }
 }
 
