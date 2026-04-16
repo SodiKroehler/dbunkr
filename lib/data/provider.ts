@@ -32,6 +32,11 @@ export async function listStubRecords() {
   return provider.listStubRecords();
 }
 
+export async function listOpenStubRecords() {
+  const provider = createDataProvider();
+  return provider.listOpenStubs();
+}
+
 export async function matchStubRecords(query: string) {
   const provider = createDataProvider();
   return provider.matchStubs(query);

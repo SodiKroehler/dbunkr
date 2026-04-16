@@ -10,3 +10,8 @@ ALTER TABLE stream_msgs ADD COLUMN type TEXT NOT NULL DEFAULT 'ephemeral' CHECK 
 ALTER TABLE stubs ADD COLUMN left_truth INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE stubs ADD COLUMN right_truth INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE stubs ADD COLUMN center_truth INTEGER NOT NULL DEFAULT 0;
+
+
+ALTER TABLE stubs DROP CONSTRAINT stubs_status_check;
+ALTER TABLE stubs ADD CONSTRAINT stubs_status_check 
+  CHECK (status IN ('seeded', 'proposed', 'approved', 'biddable'));

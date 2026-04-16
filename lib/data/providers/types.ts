@@ -5,6 +5,7 @@ export interface StubRecord {
   slug: string;
   rq: string;
   blurb: string | null;
+  type: string | null;
   left_truth: number;
   right_truth: number;
   center_truth: number;
@@ -16,6 +17,7 @@ export interface CreateStubRecordInput {
   slug: string;
   rq: string;
   blurb?: string | null;
+  type?: string | null;
   left_truth?: number;
   right_truth?: number;
   center_truth?: number;
@@ -64,6 +66,7 @@ export interface DataProvider {
   name: DataProviderName;
   initStubSchema(): Promise<void>;
   listStubRecords(): Promise<StubRecord[]>;
+  listOpenStubs(): Promise<StubRecord[]>;
   matchStubs(query: string): Promise<StubRecord[]>;
   getStubBySlug(slug: string): Promise<StubRecord | null>;
   createStubRecord(input: CreateStubRecordInput): Promise<StubRecord>;

@@ -1,5 +1,7 @@
 import { RiverView } from "@/components/river-view";
+import Link from "next/link";
 import { getStubBySlug } from "@/lib/data/provider";
+import { match } from "@/lib/match";
 
 export default async function StubPage({
   params,
@@ -19,6 +21,9 @@ export default async function StubPage({
   const overallConfidence = Math.round(
     (stub.left_truth + stub.center_truth + stub.right_truth) / 3,
   );
+  const similarOpenStubs = (await match(stub.rq))
+    .filter((candidate) => candidate.slug !== stub.slug && candidate.type === "biddable")
+    .slice(0, 3);
 
   return (
     <main className="min-h-[calc(100vh-72px)] bg-white px-8 py-6">
@@ -93,7 +98,23 @@ export default async function StubPage({
               <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-800">
                 What We Don&apos;t Know
               </h3>
-              <div className="min-h-16 rounded border border-dashed border-neutral-300 bg-white" />
+              <div className="min-h-16 rounded border border-dashed border-neutral-300 bg-white p-2">
+                {similarOpenStubs.length === 0 ? (
+                  <p className="text-xs text-neutral-500">No open related stubs yet.</p>
+                ) : (
+                  <div className="space-y-1">
+                    {similarOpenStubs.map((candidate) => (
+                      <Link
+                        key={candidate.id}
+                        href={`/stub/${candidate.slug}`}
+                        className="block text-xs text-blue-600 hover:underline"
+                      >
+                        {candidate.rq}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </aside>
         </section>

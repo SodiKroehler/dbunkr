@@ -4,10 +4,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { StubRecord } from "@/lib/data/providers/types";
 
-export function ResultsList({ initialStubs }: { initialStubs: StubRecord[] }) {
+export function ResultsList({
+  initialStubs,
+  useSessionCache = true,
+}: {
+  initialStubs: StubRecord[];
+  useSessionCache?: boolean;
+}) {
   const [stubs, setStubs] = useState<StubRecord[]>(initialStubs);
 
   useEffect(() => {
+    if (!useSessionCache) return;
     const raw = sessionStorage.getItem("results:stubs");
     if (!raw) return;
     try {
@@ -18,7 +25,7 @@ export function ResultsList({ initialStubs }: { initialStubs: StubRecord[] }) {
     } catch {
       // Ignore malformed payload and keep server-provided data.
     }
-  }, []);
+  }, [useSessionCache]);
 
   return (
     <section className="space-y-3">
@@ -34,6 +41,12 @@ export function ResultsList({ initialStubs }: { initialStubs: StubRecord[] }) {
                 <p className="text-sm text-neutral-600">{stub.blurb ?? ""}</p>
               </div>
               <time className="shrink-0 pt-1 text-xs text-neutral-400">
+                {stub.type === "biddable" ? (
+                  <span className="mb-1 inline-block rounded bg-green-500 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-white">
+                    open
+                  </span>
+                ) : null}
+                <br />
                 {new Date(stub.created_at).toLocaleDateString()}
               </time>
             </div>

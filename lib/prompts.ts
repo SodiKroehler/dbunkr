@@ -31,11 +31,5 @@ Assume the user is an adult capable of understanding nuance, but simplify if the
 Use analogies or metaphors where helpful. 
 Cite research where possible.
 Try to keep your response less than 500 words. You may go over with no penalty, but your goal is to draw the user to a better understanding, not stifle them.
-
-Finally, output the following JSON object on its own line, followed by a newline character:
-{
-  "session_id": "a unique identifier for the user's session",
-  "uname": "the user's name or username"
-}
 `;
 }
