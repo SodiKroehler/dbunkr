@@ -7,25 +7,49 @@ type RiverViewProps = {
   slug: string;
 };
 
-async function sendToStream(slug: string, llm: "claude" | "grok", message: string) {
-  const response = await fetch(`/api/v1/streams/${slug}/messages`, {
+async function sendToRiver(
+  slug: string,
+  message: string,
+  onChunk: (llm: "claude" | "grok", chunk: string) => void,
+) {
+  const response = await fetch(`/api/v1/river/${slug}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, llm }),
+    body: JSON.stringify({ message }),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to send to stream ${slug} (${llm}).`);
+    throw new Error(`Failed to send to river ${slug}.`);
   }
 
-  if (response.body) {
-    const reader = response.body.getReader();
-    while (true) {
-      const { done } = await reader.read();
-      if (done) break;
-    }
-  } else {
+  if (!response.body) {
     await response.text();
+    return;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffered = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffered += decoder.decode(value, { stream: true });
+    const lines = buffered.split("\n");
+    buffered = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const evt = JSON.parse(line) as {
+        llm?: "claude" | "grok";
+        type: "delta" | "done" | "error";
+        chunk?: string;
+      };
+      if (evt.type === "delta" && evt.llm && evt.chunk) {
+        onChunk(evt.llm, evt.chunk);
+      }
+    }
   }
 }
 
@@ -33,6 +57,13 @@ export function RiverView({ slug }: RiverViewProps) {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [liveUserMessage, setLiveUserMessage] = useState<string | null>(null);
+  const [liveAssistantByLlm, setLiveAssistantByLlm] = useState<
+    Record<"claude" | "grok", string>
+  >({
+    claude: "",
+    grok: "",
+  });
 
   async function onSend() {
     const trimmed = message.trim();
@@ -40,11 +71,17 @@ export function RiverView({ slug }: RiverViewProps) {
 
     setSending(true);
     try {
-      await Promise.all([
-        sendToStream(slug, "claude", trimmed),
-        sendToStream(slug, "grok", trimmed),
-      ]);
+      setLiveUserMessage(trimmed);
+      setLiveAssistantByLlm({ claude: "", grok: "" });
+      await sendToRiver(slug, trimmed, (llm, chunk) => {
+        setLiveAssistantByLlm((prev) => ({
+          ...prev,
+          [llm]: `${prev[llm]}${chunk}`,
+        }));
+      });
       setMessage("");
+      setLiveUserMessage(null);
+      setLiveAssistantByLlm({ claude: "", grok: "" });
       setRefreshKey((prev) => prev + 1);
     } finally {
       setSending(false);
@@ -54,8 +91,20 @@ export function RiverView({ slug }: RiverViewProps) {
   return (
     <>
       <div className="grid gap-6 lg:grid-cols-2">
-        <Stream slug={slug} llm="claude" refreshKey={refreshKey} />
-        <Stream slug={slug} llm="grok" refreshKey={refreshKey} />
+        <Stream
+          slug={slug}
+          llm="claude"
+          refreshKey={refreshKey}
+          liveUserMessage={liveUserMessage}
+          liveAssistantMessage={liveAssistantByLlm.claude}
+        />
+        <Stream
+          slug={slug}
+          llm="grok"
+          refreshKey={refreshKey}
+          liveUserMessage={liveUserMessage}
+          liveAssistantMessage={liveAssistantByLlm.grok}
+        />
       </div>
 
       <div className="mt-6 flex gap-2">

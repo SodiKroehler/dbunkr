@@ -47,6 +47,11 @@ export async function getStreamById(streamId: string) {
   return provider.getStreamById(streamId);
 }
 
+export async function listStreamsBySlug(slug: string) {
+  const provider = createDataProvider();
+  return provider.listStreamsBySlug(slug);
+}
+
 export async function searchStreams(input: StreamSearchInput) {
   const provider = createDataProvider();
   return provider.searchStreams(input);

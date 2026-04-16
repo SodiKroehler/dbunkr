@@ -23,10 +23,14 @@ export function Stream({
   slug,
   llm = "claude",
   refreshKey = 0,
+  liveUserMessage = null,
+  liveAssistantMessage = "",
 }: {
   slug: string;
   llm?: "claude" | "grok";
   refreshKey?: number;
+  liveUserMessage?: string | null;
+  liveAssistantMessage?: string;
 }) {
   const [messages, setMessages] = useState<StreamMessage[]>([]);
 
@@ -56,6 +60,18 @@ export function Stream({
             <span>{msg.content}</span>
           </div>
         ))}
+        {liveUserMessage ? (
+          <div className="text-sm text-black">
+            <span className="mr-2 font-semibold uppercase">user:</span>
+            <span>{liveUserMessage}</span>
+          </div>
+        ) : null}
+        {liveAssistantMessage ? (
+          <div className="text-sm text-black">
+            <span className="mr-2 font-semibold uppercase">assistant:</span>
+            <span>{liveAssistantMessage}</span>
+          </div>
+        ) : null}
       </div>
     </section>
   );

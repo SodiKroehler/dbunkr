@@ -1,5 +1,3 @@
-import { anthropic } from "@ai-sdk/anthropic";
-import { xai } from "@ai-sdk/xai";
 import { streamText } from "ai";
 import { NextResponse } from "next/server";
 import {
@@ -14,6 +12,7 @@ import {
   postprocess,
 } from "@/lib/stream/processing";
 import { build_stream_system_prompt } from "@/lib/prompts";
+import { getLlmModel } from "@/lib/llm/provider";
 
 const DEBUG =
   process.env.DEBUG === "true" ||
@@ -128,13 +127,10 @@ export async function POST(
     historyCount: history.length,
   });
 
-  const model =
-    llm === "claude"
-      ? anthropic("claude-haiku-4-5-20251001")
-      : xai("grok-4.1-fast");
+  const model = getLlmModel(llm);
   debugLog("Selected model", {
     llm,
-    modelId: llm === "claude" ? "claude-haiku-4-5-20251001" : "grok-4.1-fast",
+    modelId: llm,
   });
 
   const systemPrompt = clean_stream_message(

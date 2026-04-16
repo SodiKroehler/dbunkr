@@ -286,6 +286,25 @@ export class NeonDataProvider implements DataProvider {
     return rows[0] ? mapStreamRow(rows[0]) : null;
   }
 
+  async listStreamsBySlug(slug: string): Promise<StreamRecord[]> {
+    const rows = (await this.sql`
+      SELECT
+        streams.id,
+        streams.stub_id,
+        stubs.slug AS stub_slug,
+        streams.llm,
+        streams.canon,
+        streams.river,
+        streams.created_at
+      FROM streams
+      INNER JOIN stubs ON stubs.id = streams.stub_id
+      WHERE stubs.slug = ${slug}
+      ORDER BY streams.created_at ASC;
+    `) as NeonStreamRecordRow[];
+
+    return rows.map(mapStreamRow);
+  }
+
   async searchStreams(input: StreamSearchInput): Promise<StreamRecord[]> {
     const hasStreamId = Boolean(input.stream_id);
     const hasSlug = Boolean(input.slug_id);

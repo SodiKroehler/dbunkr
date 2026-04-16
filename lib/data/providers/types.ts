@@ -58,6 +58,7 @@ export interface DataProvider {
   getStubBySlug(slug: string): Promise<StubRecord | null>;
   createStubRecord(input: CreateStubRecordInput): Promise<StubRecord>;
   getStreamBySlug(slug: string, llm?: "claude" | "grok"): Promise<StreamRecord | null>;
+  listStreamsBySlug(slug: string): Promise<StreamRecord[]>;
   getStreamById(streamId: string): Promise<StreamRecord | null>;
   searchStreams(input: StreamSearchInput): Promise<StreamRecord[]>;
   listStreams(limit?: number): Promise<StreamRecord[]>;
