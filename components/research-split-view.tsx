@@ -44,10 +44,6 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
                 </dd>
               </div>
               <div className="flex justify-between border-b border-neutral-100 pb-1">
-                <dt className="text-neutral-500">Type</dt>
-                <dd className="text-neutral-800">{selected.type ?? "n/a"}</dd>
-              </div>
-              <div className="flex justify-between border-b border-neutral-100 pb-1">
                 <dt className="text-neutral-500">Slug</dt>
                 <dd className="text-neutral-800">{selected.slug}</dd>
               </div>
@@ -56,6 +52,51 @@ export function ResearchSplitView({ stubs }: { stubs: StubRecord[] }) {
                 <dd className="text-neutral-800">{selected.status}</dd>
               </div>
             </dl>
+
+            <div className="space-y-3 pt-2">
+              <div className="rounded-md border border-neutral-200 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+                  This issue should be closed
+                </p>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-2xl font-semibold text-neutral-900">{selected.close_votes}</span>
+                  <button
+                    type="button"
+                    aria-label="Upvote close votes"
+                    className="rounded border border-neutral-300 px-2 py-1 text-sm text-neutral-700 hover:bg-neutral-50"
+                  >
+                    ↑
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-md border border-neutral-200 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+                  Importance level
+                </p>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-2xl font-semibold text-neutral-900">
+                    {selected.importance_level}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      aria-label="Upvote importance level"
+                      className="rounded border border-neutral-300 px-2 py-1 text-sm text-neutral-700 hover:bg-neutral-50"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Downvote importance level"
+                      className="rounded border border-neutral-300 px-2 py-1 text-sm text-neutral-700 hover:bg-neutral-50"
+                    >
+                      ↓
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         ) : null}
       </aside>

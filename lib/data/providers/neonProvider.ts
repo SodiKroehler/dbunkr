@@ -46,11 +46,12 @@ type NeonStubRecordRow = {
   slug: string;
   rq: string;
   blurb: string | null;
-  type: string | null;
   left_truth: number | string;
   right_truth: number | string;
   center_truth: number | string;
-  status: "seeded" | "proposed" | "approved";
+  close_votes: number | string;
+  importance_level: number | string;
+  status: string;
   created_at: string | Date;
 };
 
@@ -60,10 +61,11 @@ function mapRow(row: NeonStubRecordRow): StubRecord {
     slug: row.slug,
     rq: row.rq,
     blurb: row.blurb,
-    type: row.type,
     left_truth: Number(row.left_truth),
     right_truth: Number(row.right_truth),
     center_truth: Number(row.center_truth),
+    close_votes: Number(row.close_votes),
+    importance_level: Number(row.importance_level),
     status: row.status,
     created_at:
       row.created_at instanceof Date
@@ -180,10 +182,11 @@ export class NeonDataProvider implements DataProvider {
           slug,
           rq,
           blurb,
-          "type",
           left_truth,
           right_truth,
           center_truth,
+          close_votes,
+          importance_level,
           status,
           created_at
         FROM stubs
@@ -197,10 +200,11 @@ export class NeonDataProvider implements DataProvider {
           slug,
           rq,
           blurb,
-          ''::text AS "type",
           0 AS left_truth,
           0 AS right_truth,
           0 AS center_truth,
+          0 AS close_votes,
+          0 AS importance_level,
           status,
           created_at
         FROM stubs
@@ -225,10 +229,11 @@ export class NeonDataProvider implements DataProvider {
           slug,
           rq,
           blurb,
-          "type",
           left_truth,
           right_truth,
           center_truth,
+          close_votes,
+          importance_level,
           status,
           created_at
         FROM (
@@ -237,10 +242,11 @@ export class NeonDataProvider implements DataProvider {
             slug,
             rq,
             blurb,
-            "type",
             left_truth,
             right_truth,
             center_truth,
+            close_votes,
+            importance_level,
             status,
             created_at,
             similarity(rq, ${trimmed}) AS score
@@ -258,10 +264,11 @@ export class NeonDataProvider implements DataProvider {
           slug,
           rq,
           blurb,
-          ''::text AS "type",
           0 AS left_truth,
           0 AS right_truth,
           0 AS center_truth,
+          0 AS close_votes,
+          0 AS importance_level,
           status,
           created_at
         FROM (
@@ -270,7 +277,8 @@ export class NeonDataProvider implements DataProvider {
             slug,
             rq,
             blurb,
-            ''::text AS "type",
+            0 AS close_votes,
+            0 AS importance_level,
             status,
             created_at,
             similarity(rq, ${trimmed}) AS score
@@ -294,15 +302,16 @@ export class NeonDataProvider implements DataProvider {
           slug,
           rq,
           blurb,
-          "type",
           left_truth,
           right_truth,
           center_truth,
+          close_votes,
+          importance_level,
           status,
           created_at
         FROM stubs
-        WHERE "type" = 'biddable'
-        ORDER BY created_at DESC;
+        WHERE status = 'biddable'
+        ORDER BY importance_level DESC, created_at DESC;
       `) as NeonStubRecordRow[];
     } catch (error) {
       if ((error as { code?: string })?.code !== "42703") throw error;
@@ -320,10 +329,11 @@ export class NeonDataProvider implements DataProvider {
           slug,
           rq,
           blurb,
-          "type",
           left_truth,
           right_truth,
           center_truth,
+          close_votes,
+          importance_level,
           status,
           created_at
         FROM stubs
@@ -338,10 +348,11 @@ export class NeonDataProvider implements DataProvider {
           slug,
           rq,
           blurb,
-          ''::text AS "type",
           0 AS left_truth,
           0 AS right_truth,
           0 AS center_truth,
+          0 AS close_votes,
+          0 AS importance_level,
           status,
           created_at
         FROM stubs
@@ -359,20 +370,22 @@ export class NeonDataProvider implements DataProvider {
         slug,
         rq,
         blurb,
-        "type",
         left_truth,
         right_truth,
         center_truth,
+        close_votes,
+        importance_level,
         status
       )
       VALUES (
         ${input.slug},
         ${input.rq},
         ${input.blurb ?? null},
-        ${input.type ?? null},
         ${input.left_truth ?? 0},
         ${input.right_truth ?? 0},
         ${input.center_truth ?? 0},
+        ${input.close_votes ?? 0},
+        ${input.importance_level ?? 0},
         ${input.status ?? "proposed"}
       )
       RETURNING
@@ -380,10 +393,11 @@ export class NeonDataProvider implements DataProvider {
         slug,
         rq,
         blurb,
-        "type",
         left_truth,
         right_truth,
         center_truth,
+        close_votes,
+        importance_level,
         status,
         created_at;
     `) as NeonStubRecordRow[];

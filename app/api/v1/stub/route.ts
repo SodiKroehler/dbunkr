@@ -3,7 +3,7 @@ import { createDataProvider } from "@/lib/data/provider";
 
 type CreateStubBody = {
   rq?: string;
-  type?: string;
+  status?: string;
 };
 
 function slugify(input: string) {
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   const provider = createDataProvider();
   const base = slugify(rq) || "proposed-rq";
   const slug = `${base}-${Math.random().toString(36).slice(2, 8)}`;
-  const status = body.type === "proposed" ? "proposed" : "proposed";
+  const status = body.status === "proposed" ? "proposed" : "proposed";
 
   const stub = await provider.createStubRecord({
     slug,

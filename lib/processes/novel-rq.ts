@@ -6,7 +6,7 @@ export async function triggerNovelResearchQuestionProcess(userQuestion: string) 
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      type: "proposed",
+      status: "proposed",
       rq,
     }),
   });

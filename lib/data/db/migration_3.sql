@@ -15,3 +15,7 @@ ALTER TABLE stubs ADD COLUMN center_truth INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE stubs DROP CONSTRAINT stubs_status_check;
 ALTER TABLE stubs ADD CONSTRAINT stubs_status_check 
   CHECK (status IN ('seeded', 'proposed', 'approved', 'biddable'));
+
+ALTER TABLE stubs 
+  ADD COLUMN close_votes INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN importance_level INTEGER NOT NULL DEFAULT 0;

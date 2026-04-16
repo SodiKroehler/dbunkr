@@ -5,11 +5,12 @@ export interface StubRecord {
   slug: string;
   rq: string;
   blurb: string | null;
-  type: string | null;
   left_truth: number;
   right_truth: number;
   center_truth: number;
-  status: "seeded" | "proposed" | "approved";
+  close_votes: number;
+  importance_level: number;
+  status: string;
   created_at: string;
 }
 
@@ -17,11 +18,12 @@ export interface CreateStubRecordInput {
   slug: string;
   rq: string;
   blurb?: string | null;
-  type?: string | null;
   left_truth?: number;
   right_truth?: number;
   center_truth?: number;
-  status?: "seeded" | "proposed" | "approved";
+  close_votes?: number;
+  importance_level?: number;
+  status?: string;
 }
 
 export interface StreamCanonMessage {

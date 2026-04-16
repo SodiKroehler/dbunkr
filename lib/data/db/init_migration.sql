@@ -65,18 +65,6 @@ CREATE TABLE votes (
 
 CREATE INDEX votes_stub_idx ON votes (stub_id);
 
--- Postings: research job board
-CREATE TABLE postings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  stub_id UUID REFERENCES stubs(id) ON DELETE SET NULL,
-  title TEXT NOT NULL,
-  description TEXT NOT NULL,
-  funding_cents INTEGER NOT NULL DEFAULT 0,
-  venmo_ref TEXT,
-  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'funded', 'closed')),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
 
 -- Bids: researcher proposals on postings
 CREATE TABLE bids (

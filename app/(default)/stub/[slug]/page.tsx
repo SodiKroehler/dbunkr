@@ -22,7 +22,7 @@ export default async function StubPage({
     (stub.left_truth + stub.center_truth + stub.right_truth) / 3,
   );
   const similarOpenStubs = (await match(stub.rq))
-    .filter((candidate) => candidate.slug !== stub.slug && candidate.type === "biddable")
+    .filter((candidate) => candidate.slug !== stub.slug && candidate.status === "biddable")
     .slice(0, 3);
 
   return (

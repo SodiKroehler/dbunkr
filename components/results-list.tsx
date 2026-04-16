@@ -41,7 +41,7 @@ export function ResultsList({
                 <p className="text-sm text-neutral-600">{stub.blurb ?? ""}</p>
               </div>
               <time className="shrink-0 pt-1 text-xs text-neutral-400">
-                {stub.type === "biddable" ? (
+                {stub.status === "biddable" ? (
                   <span className="mb-1 inline-block rounded bg-green-500 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-white">
                     open
                   </span>
