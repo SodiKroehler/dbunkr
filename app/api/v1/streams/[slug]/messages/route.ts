@@ -200,13 +200,12 @@ export async function POST(
           streamId: stream.id,
           processedLength: processed.length,
         });
-        const messageType = cleanedOutput.tag === "unseen" ? "proposed" : "ephemeral";
         await createStreamMessage(
           stream.id,
           "assistant",
           sessionId,
           llm,
-          messageType,
+          "ephemeral",
           processed,
         );
         debugLog("Stored assistant message", {

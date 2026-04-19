@@ -10,6 +10,7 @@ import * as stubMessagesRoute from "@/app/api/v1/stubs/[slug]/messages/route";
 import * as stubsBySlugRoute from "@/app/api/v1/stubs/[slug]/route";
 import * as stubVotesRoute from "@/app/api/v1/stubs/[slug]/votes/route";
 import * as stubBiasVoteRoute from "@/app/api/v1/stubs/[slug]/bias-vote/route";
+import * as stubsAskRoute from "@/app/api/v1/stubs/ask/route";
 import * as stubsRoute from "@/app/api/v1/stubs/route";
 import * as voteRoute from "@/app/api/v1/vote/route";
 import * as stubBidsRoute from "@/app/api/v1/bids/route";
@@ -47,6 +48,19 @@ async function expectPotStateResponse(responsePromise: Promise<Response>) {
 
 test("GET /api/v1/stubs returns list format", async () => {
   await expectListResponse(stubsRoute.GET());
+});
+
+test("POST /api/v1/stubs/ask rejects empty rq", async () => {
+  const response = await stubsAskRoute.POST(
+    new Request("http://localhost/api/v1/stubs/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rq: "" }),
+    }),
+  );
+  assert.equal(response.status, 400);
+  const body = await response.json();
+  assert.ok("error" in body);
 });
 
 test("POST /api/v1/stubs returns item format", async () => {

@@ -29,14 +29,12 @@ export function Stream({
   refreshKey = 0,
   liveUserMessage = null,
   liveAssistantMessage = "",
-  liveNovel = false,
 }: {
   slug: string;
   llm?: "claude" | "grok";
   refreshKey?: number;
   liveUserMessage?: string | null;
   liveAssistantMessage?: string;
-  liveNovel?: boolean;
 }) {
   const [messages, setMessages] = useState<StreamMessage[]>([]);
 
@@ -73,7 +71,6 @@ export function Stream({
               <span>{msg.content}</span>
             )}
             </div>
-            {msg.type === "proposed" ? <span title="Novel idea">💡</span> : null}
           </div>
         ))}
         {liveUserMessage ? (
@@ -90,7 +87,6 @@ export function Stream({
                 <ReactMarkdown>{liveAssistantMessage}</ReactMarkdown>
               </div>
             </div>
-            {liveNovel ? <span title="Novel idea">💡</span> : null}
           </div>
         ) : null}
       </div>

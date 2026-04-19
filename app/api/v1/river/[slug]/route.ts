@@ -9,7 +9,6 @@ import {
   listStreamsBySlug,
 } from "@/lib/data/provider";
 import { sitePotCostFromMessage } from "@/lib/pot/site-cost";
-import { match } from "@/lib/match";
 import { getLlmModel, type LlmName } from "@/lib/llm/provider";
 import { build_stream_system_prompt } from "@/lib/prompts";
 import {
@@ -106,21 +105,8 @@ export async function POST(
         const cleanedOutput = clean_stream_message(fullText);
 
         if (cleanedOutput.tag === "unrelated") {
-          const matches = await match(cleanedMessage);
           controller.enqueue(
-            encoder.encode(
-              `${JSON.stringify({
-                llm,
-                type: "unrelated",
-                stream_id: stream.id,
-                response: cleanedOutput.content,
-                user_message: cleanedMessage,
-                suggestions: matches.slice(0, 3).map((stubMatch) => ({
-                  slug: stubMatch.slug,
-                  rq: stubMatch.rq,
-                })),
-              })}\n`,
-            ),
+            encoder.encode(`${JSON.stringify({ llm, type: "done" })}\n`),
           );
           return;
         }
@@ -130,23 +116,16 @@ export async function POST(
           stream.id,
           cleanedOutput.content,
         );
-        const messageType = cleanedOutput.tag === "unseen" ? "proposed" : "ephemeral";
         await createStreamMessage(
           stream.id,
           "assistant",
           sessionId,
           llm,
-          messageType,
+          "ephemeral",
           processed,
         );
         controller.enqueue(
-          encoder.encode(
-            `${JSON.stringify({
-              llm,
-              type: "done",
-              novel: cleanedOutput.tag === "unseen",
-            })}\n`,
-          ),
+          encoder.encode(`${JSON.stringify({ llm, type: "done" })}\n`),
         );
       });
 
