@@ -32,7 +32,9 @@ export default async function AboutPage() {
       <div className="mx-auto max-w-5xl px-8 py-10">
         <section>
           <h2 className="text-2xl font-semibold tracking-tight text-neutral-900">README</h2>
-          <p className="mt-6 text-xl leading-relaxed text-neutral-800">{body}</p>
+          <p className="mt-6 whitespace-pre-line text-xl leading-relaxed text-neutral-800">
+            {body}
+          </p>
         </section>
       </div>
 
