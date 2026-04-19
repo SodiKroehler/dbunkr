@@ -54,6 +54,11 @@ export async function getStubBySlug(slug: string) {
   return provider.getStubBySlug(slug);
 }
 
+export async function getStubById(id: string) {
+  const provider = createDataProvider();
+  return provider.getStubById(id);
+}
+
 export async function getStreamBySlug(slug: string, llm?: "claude" | "grok") {
   const provider = createDataProvider();
   return provider.getStreamBySlug(slug, llm);

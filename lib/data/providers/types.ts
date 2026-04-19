@@ -14,6 +14,8 @@ export function isStubVoteType(value: string): value is StubVoteType {
 
 export interface StubRecord {
   id: string;
+  /** Optional link to a parent stub (e.g. fork / refinement). */
+  parent_id: string | null;
   slug: string;
   rq: string;
   blurb: string | null;
@@ -33,6 +35,7 @@ export interface StubRecord {
 export interface CreateStubRecordInput {
   slug: string;
   rq: string;
+  parent_id?: string | null;
   blurb?: string | null;
   related_links?: string | null;
   official_truth?: number;
@@ -132,6 +135,7 @@ export interface DataProvider {
   listOpenStubs(): Promise<StubRecord[]>;
   matchStubs(query: string): Promise<StubRecord[]>;
   getStubBySlug(slug: string): Promise<StubRecord | null>;
+  getStubById(id: string): Promise<StubRecord | null>;
   createStubRecord(input: CreateStubRecordInput): Promise<StubRecord>;
   applyStubVote(stubId: string, voteType: StubVoteType): Promise<StubRecord | null>;
   incrementStubBiasVote(slug: string, axis: BiasVoteAxis): Promise<StubRecord | null>;

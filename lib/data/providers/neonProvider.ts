@@ -49,10 +49,12 @@ CREATE TABLE IF NOT EXISTS stream_msgs (
 
 ALTER TABLE stubs ADD COLUMN IF NOT EXISTS related_links TEXT;
 ALTER TABLE stubs ADD COLUMN IF NOT EXISTS official_truth SMALLINT NOT NULL DEFAULT 50;
+ALTER TABLE stubs ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES stubs(id) ON DELETE SET NULL;
 `;
 
 type NeonStubRecordRow = {
   id: string;
+  parent_id?: string | null;
   slug: string;
   rq: string;
   blurb: string | null;
@@ -70,6 +72,7 @@ type NeonStubRecordRow = {
 function mapRow(row: NeonStubRecordRow): StubRecord {
   return {
     id: row.id,
+    parent_id: row.parent_id ?? null,
     slug: row.slug,
     rq: row.rq,
     blurb: row.blurb,
@@ -236,6 +239,7 @@ export class NeonDataProvider implements DataProvider {
           close_votes,
           importance_level,
           status,
+          parent_id,
           created_at
         FROM stubs
         ORDER BY created_at DESC;
@@ -256,6 +260,7 @@ export class NeonDataProvider implements DataProvider {
           0 AS close_votes,
           0 AS importance_level,
           status,
+          NULL::uuid AS parent_id,
           created_at
         FROM stubs
         ORDER BY created_at DESC;
@@ -287,6 +292,7 @@ export class NeonDataProvider implements DataProvider {
           close_votes,
           importance_level,
           status,
+          parent_id,
           created_at
         FROM (
           SELECT
@@ -302,6 +308,7 @@ export class NeonDataProvider implements DataProvider {
             close_votes,
             importance_level,
             status,
+            parent_id,
             created_at,
             similarity(rq, ${trimmed}) AS score
           FROM stubs
@@ -326,6 +333,7 @@ export class NeonDataProvider implements DataProvider {
           0 AS close_votes,
           0 AS importance_level,
           status,
+          NULL::uuid AS parent_id,
           created_at
         FROM (
           SELECT
@@ -336,6 +344,7 @@ export class NeonDataProvider implements DataProvider {
             0 AS close_votes,
             0 AS importance_level,
             status,
+            NULL::uuid AS parent_id,
             created_at,
             similarity(rq, ${trimmed}) AS score
           FROM stubs
@@ -366,6 +375,7 @@ export class NeonDataProvider implements DataProvider {
           close_votes,
           importance_level,
           status,
+          parent_id,
           created_at
         FROM stubs
         WHERE status = 'biddable'
@@ -395,6 +405,7 @@ export class NeonDataProvider implements DataProvider {
           close_votes,
           importance_level,
           status,
+          parent_id,
           created_at
         FROM stubs
         WHERE slug = ${slug}
@@ -416,9 +427,60 @@ export class NeonDataProvider implements DataProvider {
           0 AS close_votes,
           0 AS importance_level,
           status,
+          NULL::uuid AS parent_id,
           created_at
         FROM stubs
         WHERE slug = ${slug}
+        LIMIT 1;
+      `) as NeonStubRecordRow[];
+    }
+
+    return rows[0] ? mapRow(rows[0]) : null;
+  }
+
+  async getStubById(id: string): Promise<StubRecord | null> {
+    let rows: NeonStubRecordRow[];
+    try {
+      rows = (await this.sql`
+        SELECT
+          id,
+          slug,
+          rq,
+          blurb,
+          left_truth,
+          right_truth,
+          center_truth,
+          related_links,
+          official_truth,
+          close_votes,
+          importance_level,
+          status,
+          parent_id,
+          created_at
+        FROM stubs
+        WHERE id = ${id}
+        LIMIT 1;
+      `) as NeonStubRecordRow[];
+    } catch (error) {
+      if ((error as { code?: string })?.code !== "42703") throw error;
+      rows = (await this.sql`
+        SELECT
+          id,
+          slug,
+          rq,
+          blurb,
+          0 AS left_truth,
+          0 AS right_truth,
+          0 AS center_truth,
+          NULL::text AS related_links,
+          50 AS official_truth,
+          0 AS close_votes,
+          0 AS importance_level,
+          status,
+          NULL::uuid AS parent_id,
+          created_at
+        FROM stubs
+        WHERE id = ${id}
         LIMIT 1;
       `) as NeonStubRecordRow[];
     }
@@ -431,6 +493,7 @@ export class NeonDataProvider implements DataProvider {
       INSERT INTO stubs (
         slug,
         rq,
+        parent_id,
         blurb,
         left_truth,
         right_truth,
@@ -444,6 +507,7 @@ export class NeonDataProvider implements DataProvider {
       VALUES (
         ${input.slug},
         ${input.rq},
+        ${input.parent_id ?? null},
         ${input.blurb ?? null},
         ${input.left_truth ?? 0},
         ${input.right_truth ?? 0},
@@ -467,6 +531,7 @@ export class NeonDataProvider implements DataProvider {
         close_votes,
         importance_level,
         status,
+        parent_id,
         created_at;
     `) as NeonStubRecordRow[];
 
@@ -493,6 +558,7 @@ export class NeonDataProvider implements DataProvider {
           close_votes,
           importance_level,
           status,
+          parent_id,
           created_at
       `) as NeonStubRecordRow[];
     } else if (voteType === "importance_forward") {
@@ -513,6 +579,7 @@ export class NeonDataProvider implements DataProvider {
           close_votes,
           importance_level,
           status,
+          parent_id,
           created_at
       `) as NeonStubRecordRow[];
     } else {
@@ -533,6 +600,7 @@ export class NeonDataProvider implements DataProvider {
           close_votes,
           importance_level,
           status,
+          parent_id,
           created_at
       `) as NeonStubRecordRow[];
     }
@@ -560,6 +628,7 @@ export class NeonDataProvider implements DataProvider {
           close_votes,
           importance_level,
           status,
+          parent_id,
           created_at;
       `) as NeonStubRecordRow[];
     } else if (axis === "center") {
@@ -580,6 +649,7 @@ export class NeonDataProvider implements DataProvider {
           close_votes,
           importance_level,
           status,
+          parent_id,
           created_at;
       `) as NeonStubRecordRow[];
     } else {
@@ -600,6 +670,7 @@ export class NeonDataProvider implements DataProvider {
           close_votes,
           importance_level,
           status,
+          parent_id,
           created_at;
       `) as NeonStubRecordRow[];
     }

@@ -1,9 +1,9 @@
 import { RiverView } from "@/components/river-view";
 import { RelatedLinksPanel, RelatedQuestionsPanel } from "@/components/stub-summary-row";
 import { TruthRatingsPanel } from "@/components/truth-ratings-panel";
-import { getStubBySlug } from "@/lib/data/provider";
+import { getStubById, getStubBySlug } from "@/lib/data/provider";
 import { match } from "@/lib/match";
-import { partitionRelatedQuestions } from "@/lib/stub-related";
+import { buildRelatedQuestionLists } from "@/lib/stub-related";
 
 export default async function StubPage({
   params,
@@ -21,7 +21,7 @@ export default async function StubPage({
   }
 
   const matched = await match(stub.rq);
-  const { know, dontKnow } = partitionRelatedQuestions(matched, stub.slug);
+  const { know, dontKnow } = await buildRelatedQuestionLists(stub, matched, getStubById);
 
   return (
     <main className="min-h-[calc(100vh-72px)] bg-white px-8 py-6">

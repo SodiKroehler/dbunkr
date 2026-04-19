@@ -11,7 +11,7 @@ function TruthScale({ title, value }: { title: string; value: number }) {
     <div className="flex min-h-[120px] flex-1 flex-col justify-center rounded-md border border-neutral-200 bg-white px-3 py-4 shadow-sm">
       <h3 className="mb-4 text-center text-sm font-semibold text-neutral-900">{title}</h3>
       <div className="flex items-center gap-2 sm:gap-3">
-        <span className="w-24 shrink-0 text-xs leading-snug text-neutral-600 sm:w-28">
+        <span className="w-10 shrink-0 text-xs leading-snug text-neutral-600 sm:w-10">
           not at all true
         </span>
         <div className="relative h-12 min-w-0 flex-1 overflow-hidden rounded-full bg-neutral-200">
@@ -20,7 +20,7 @@ function TruthScale({ title, value }: { title: string; value: number }) {
             style={{ width: `${v}%` }}
           />
         </div>
-        <span className="w-24 shrink-0 text-right text-xs leading-snug text-neutral-600 sm:w-28">
+        <span className="w-10 shrink-0 text-right text-xs leading-snug text-neutral-600 sm:w-10">
           entirely true
         </span>
       </div>

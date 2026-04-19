@@ -141,3 +141,35 @@ The irony is that the original video was made by a flat-earther mocking NASA —
 );
 
 ALTER TABLE stubs RENAME COLUMN official_score TO official_truth;
+
+-- Parent: Rand et al. Community Notes finding
+INSERT INTO stubs (slug, rq, blurb, status, related_links, official_truth,
+                   left_truth, right_truth, center_truth, close_votes, importance_level)
+VALUES (
+  'republicans-flagged-more-community-notes',
+  'Are Republicans flagged more often than Democrats for sharing misinformation on X''s Community Notes?',
+  'A study using crowd-sourced assessments from X''s Community Notes program found that 67% more posts by Republicans are flagged as misleading compared to posts by Democrats. Unlike prior research relying on professional fact-checkers, this study used agreement across a politically diverse community of platform users to determine misleadingness — a design that controls for accusations of fact-checker bias.
+
+The authors found no evidence this disparity is a base-rate artifact: Republicans are not meaningfully over-represented among X users in a way that would explain the gap. The findings suggest a genuine partisan asymmetry in misinformation sharing, and further indicate that even if platforms transition away from professional fact-checking toward Community Notes-style systems, Republicans would still be sanctioned at higher rates than Democrats.',
+  'seeded',
+  ARRAY['https://osf.io/preprints/psyarxiv/vk5yj_v2'],
+  85,
+  0, 0, 0, 0, 0
+);
+
+-- Child: open/biddable extension question
+INSERT INTO stubs (slug, rq, blurb, status, related_links, official_truth,
+                   left_truth, right_truth, center_truth, close_votes, importance_level,
+                   parent_id)
+VALUES (
+  'republicans-flagged-more-all-platforms',
+  'Are Republicans more likely to be flagged for misinformation than Democrats across all major social media platforms?',
+  'The Community Notes finding establishes a partisan asymmetry on X, but it is an open question whether this pattern holds across platforms with different moderation architectures, user bases, and content policies. Facebook, Instagram, YouTube, and TikTok use different combinations of algorithmic detection, third-party fact-checkers, and user reporting — each of which may interact differently with partisan content patterns.
+
+This question is currently unresolved. Cross-platform studies face significant data access barriers, and existing research is largely platform-specific. Whether the asymmetry is a property of Republican sharing behavior broadly or is specific to X''s user composition and Community Notes design remains to be determined.',
+  'biddable',
+  ARRAY['https://osf.io/preprints/psyarxiv/vk5yj_v2'],
+  0,
+  0, 0, 0, 0, 0,
+  (SELECT id FROM stubs WHERE slug = 'republicans-flagged-more-community-notes')
+);
