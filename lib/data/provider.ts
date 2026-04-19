@@ -1,5 +1,6 @@
 import { NeonDataProvider } from "@/lib/data/providers/neonProvider";
 import type {
+  BiasVoteAxis,
   BidVoteDirection,
   CreateBidInput,
   DataProvider,
@@ -123,4 +124,9 @@ export async function createBidRecord(input: CreateBidInput) {
 export async function applyBidVoteRecord(bidId: string, direction: BidVoteDirection) {
   const provider = createDataProvider();
   return provider.applyBidVote(bidId, direction);
+}
+
+export async function incrementStubBiasVoteRecord(slug: string, axis: BiasVoteAxis) {
+  const provider = createDataProvider();
+  return provider.incrementStubBiasVote(slug, axis);
 }

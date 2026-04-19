@@ -1,6 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import { sitePotCostFromMessage } from "@/lib/pot/site-cost";
 import type {
+  BiasVoteAxis,
   BidRecord,
   BidVoteDirection,
   CreateBidInput,
@@ -45,6 +46,9 @@ CREATE TABLE IF NOT EXISTS stream_msgs (
   content TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE stubs ADD COLUMN IF NOT EXISTS related_links TEXT;
+ALTER TABLE stubs ADD COLUMN IF NOT EXISTS official_truth SMALLINT NOT NULL DEFAULT 50;
 `;
 
 type NeonStubRecordRow = {
@@ -52,6 +56,8 @@ type NeonStubRecordRow = {
   slug: string;
   rq: string;
   blurb: string | null;
+  related_links?: string | null;
+  official_truth?: number | string | null;
   left_truth: number | string;
   right_truth: number | string;
   center_truth: number | string;
@@ -67,6 +73,11 @@ function mapRow(row: NeonStubRecordRow): StubRecord {
     slug: row.slug,
     rq: row.rq,
     blurb: row.blurb,
+    related_links: row.related_links ?? null,
+    official_truth:
+      row.official_truth !== undefined && row.official_truth !== null
+        ? Number(row.official_truth)
+        : 50,
     left_truth: Number(row.left_truth),
     right_truth: Number(row.right_truth),
     center_truth: Number(row.center_truth),
@@ -220,6 +231,8 @@ export class NeonDataProvider implements DataProvider {
           left_truth,
           right_truth,
           center_truth,
+          related_links,
+          official_truth,
           close_votes,
           importance_level,
           status,
@@ -238,6 +251,8 @@ export class NeonDataProvider implements DataProvider {
           0 AS left_truth,
           0 AS right_truth,
           0 AS center_truth,
+          NULL::text AS related_links,
+          50 AS official_truth,
           0 AS close_votes,
           0 AS importance_level,
           status,
@@ -267,6 +282,8 @@ export class NeonDataProvider implements DataProvider {
           left_truth,
           right_truth,
           center_truth,
+          related_links,
+          official_truth,
           close_votes,
           importance_level,
           status,
@@ -280,6 +297,8 @@ export class NeonDataProvider implements DataProvider {
             left_truth,
             right_truth,
             center_truth,
+            related_links,
+            official_truth,
             close_votes,
             importance_level,
             status,
@@ -302,6 +321,8 @@ export class NeonDataProvider implements DataProvider {
           0 AS left_truth,
           0 AS right_truth,
           0 AS center_truth,
+          NULL::text AS related_links,
+          50 AS official_truth,
           0 AS close_votes,
           0 AS importance_level,
           status,
@@ -340,6 +361,8 @@ export class NeonDataProvider implements DataProvider {
           left_truth,
           right_truth,
           center_truth,
+          related_links,
+          official_truth,
           close_votes,
           importance_level,
           status,
@@ -367,6 +390,8 @@ export class NeonDataProvider implements DataProvider {
           left_truth,
           right_truth,
           center_truth,
+          related_links,
+          official_truth,
           close_votes,
           importance_level,
           status,
@@ -386,6 +411,8 @@ export class NeonDataProvider implements DataProvider {
           0 AS left_truth,
           0 AS right_truth,
           0 AS center_truth,
+          NULL::text AS related_links,
+          50 AS official_truth,
           0 AS close_votes,
           0 AS importance_level,
           status,
@@ -408,6 +435,8 @@ export class NeonDataProvider implements DataProvider {
         left_truth,
         right_truth,
         center_truth,
+        related_links,
+        official_truth,
         close_votes,
         importance_level,
         status
@@ -419,6 +448,8 @@ export class NeonDataProvider implements DataProvider {
         ${input.left_truth ?? 0},
         ${input.right_truth ?? 0},
         ${input.center_truth ?? 0},
+        ${input.related_links ?? null},
+        ${input.official_truth ?? 50},
         ${input.close_votes ?? 0},
         ${input.importance_level ?? 0},
         ${input.status ?? "proposed"}
@@ -431,6 +462,8 @@ export class NeonDataProvider implements DataProvider {
         left_truth,
         right_truth,
         center_truth,
+        related_links,
+        official_truth,
         close_votes,
         importance_level,
         status,
@@ -455,6 +488,8 @@ export class NeonDataProvider implements DataProvider {
           left_truth,
           right_truth,
           center_truth,
+          related_links,
+          official_truth,
           close_votes,
           importance_level,
           status,
@@ -473,6 +508,8 @@ export class NeonDataProvider implements DataProvider {
           left_truth,
           right_truth,
           center_truth,
+          related_links,
+          official_truth,
           close_votes,
           importance_level,
           status,
@@ -491,10 +528,79 @@ export class NeonDataProvider implements DataProvider {
           left_truth,
           right_truth,
           center_truth,
+          related_links,
+          official_truth,
           close_votes,
           importance_level,
           status,
           created_at
+      `) as NeonStubRecordRow[];
+    }
+
+    return rows[0] ? mapRow(rows[0]) : null;
+  }
+
+  async incrementStubBiasVote(slug: string, axis: BiasVoteAxis): Promise<StubRecord | null> {
+    let rows: NeonStubRecordRow[];
+    if (axis === "left") {
+      rows = (await this.sql`
+        UPDATE stubs
+        SET left_truth = LEAST(left_truth + 1, 100)
+        WHERE slug = ${slug}
+        RETURNING
+          id,
+          slug,
+          rq,
+          blurb,
+          left_truth,
+          right_truth,
+          center_truth,
+          related_links,
+          official_truth,
+          close_votes,
+          importance_level,
+          status,
+          created_at;
+      `) as NeonStubRecordRow[];
+    } else if (axis === "center") {
+      rows = (await this.sql`
+        UPDATE stubs
+        SET center_truth = LEAST(center_truth + 1, 100)
+        WHERE slug = ${slug}
+        RETURNING
+          id,
+          slug,
+          rq,
+          blurb,
+          left_truth,
+          right_truth,
+          center_truth,
+          related_links,
+          official_truth,
+          close_votes,
+          importance_level,
+          status,
+          created_at;
+      `) as NeonStubRecordRow[];
+    } else {
+      rows = (await this.sql`
+        UPDATE stubs
+        SET right_truth = LEAST(right_truth + 1, 100)
+        WHERE slug = ${slug}
+        RETURNING
+          id,
+          slug,
+          rq,
+          blurb,
+          left_truth,
+          right_truth,
+          center_truth,
+          related_links,
+          official_truth,
+          close_votes,
+          importance_level,
+          status,
+          created_at;
       `) as NeonStubRecordRow[];
     }
 

@@ -9,6 +9,7 @@ import * as potRoute from "@/app/api/v1/pot/route";
 import * as stubMessagesRoute from "@/app/api/v1/stubs/[slug]/messages/route";
 import * as stubsBySlugRoute from "@/app/api/v1/stubs/[slug]/route";
 import * as stubVotesRoute from "@/app/api/v1/stubs/[slug]/votes/route";
+import * as stubBiasVoteRoute from "@/app/api/v1/stubs/[slug]/bias-vote/route";
 import * as stubsRoute from "@/app/api/v1/stubs/route";
 import * as voteRoute from "@/app/api/v1/vote/route";
 import * as stubBidsRoute from "@/app/api/v1/bids/route";
@@ -74,6 +75,20 @@ test("POST /api/v1/stubs/[slug]/messages returns item format", async () => {
 
 test("POST /api/v1/stubs/[slug]/votes returns item format", async () => {
   await expectItemResponse(stubVotesRoute.POST());
+});
+
+test("POST /api/v1/stubs/[slug]/bias-vote rejects invalid axis", async () => {
+  const response = await stubBiasVoteRoute.POST(
+    new Request("http://localhost/api/v1/stubs/example/bias-vote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ axis: "north" }),
+    }),
+    { params: { slug: "example" } },
+  );
+  assert.equal(response.status, 400);
+  const body = await response.json();
+  assert.ok("error" in body);
 });
 
 test("POST /api/v1/vote rejects invalid voteType", async () => {

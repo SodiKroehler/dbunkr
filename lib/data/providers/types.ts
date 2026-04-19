@@ -17,6 +17,10 @@ export interface StubRecord {
   slug: string;
   rq: string;
   blurb: string | null;
+  /** Comma-separated URLs from external sources (stored as plain text). */
+  related_links: string | null;
+  /** Aggregate 0–100 from other sites / editorial signal. */
+  official_truth: number;
   left_truth: number;
   right_truth: number;
   center_truth: number;
@@ -30,6 +34,8 @@ export interface CreateStubRecordInput {
   slug: string;
   rq: string;
   blurb?: string | null;
+  related_links?: string | null;
+  official_truth?: number;
   left_truth?: number;
   right_truth?: number;
   center_truth?: number;
@@ -112,6 +118,13 @@ export function isBidVoteDirection(value: string): value is BidVoteDirection {
   return (BID_VOTE_DIRECTIONS as readonly string[]).includes(value);
 }
 
+export const BIAS_VOTE_AXES = ["left", "center", "right"] as const;
+export type BiasVoteAxis = (typeof BIAS_VOTE_AXES)[number];
+
+export function isBiasVoteAxis(value: string): value is BiasVoteAxis {
+  return (BIAS_VOTE_AXES as readonly string[]).includes(value);
+}
+
 export interface DataProvider {
   name: DataProviderName;
   initStubSchema(): Promise<void>;
@@ -121,6 +134,7 @@ export interface DataProvider {
   getStubBySlug(slug: string): Promise<StubRecord | null>;
   createStubRecord(input: CreateStubRecordInput): Promise<StubRecord>;
   applyStubVote(stubId: string, voteType: StubVoteType): Promise<StubRecord | null>;
+  incrementStubBiasVote(slug: string, axis: BiasVoteAxis): Promise<StubRecord | null>;
   getStreamBySlug(slug: string, llm?: "claude" | "grok"): Promise<StreamRecord | null>;
   listStreamsBySlug(slug: string): Promise<StreamRecord[]>;
   getStreamById(streamId: string): Promise<StreamRecord | null>;
