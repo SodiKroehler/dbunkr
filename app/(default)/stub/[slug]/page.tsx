@@ -27,7 +27,19 @@ export default async function StubPage({
     <main className="min-h-[calc(100vh-72px)] bg-white px-8 py-6">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
         <section className="space-y-4">
-          <h1 className="text-3xl font-semibold text-neutral-900">{stub.rq}</h1>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <h1 className="min-w-0 flex-1 text-3xl font-semibold text-neutral-900">{stub.rq}</h1>
+            <span
+              className="pointer-events-none shrink-0 select-none rounded-md border border-neutral-300 bg-neutral-50 px-3 py-1.5 text-sm font-semibold text-neutral-900"
+              aria-label={
+                stub.status === "biddable"
+                  ? "Research question is open"
+                  : "Research question is closed"
+              }
+            >
+              {stub.status === "biddable" ? "open" : "closed"}
+            </span>
+          </div>
           <p className="text-base leading-7 text-neutral-700">{stub.blurb ?? ""}</p>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6 lg:items-stretch">

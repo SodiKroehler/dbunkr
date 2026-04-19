@@ -163,7 +163,7 @@ export function ResultsList({
                     setNewQuestion("");
                     setAskError(null);
                   }}
-                  className="rounded border border-neutral-300 px-4 py-2 text-sm hover:bg-neutral-50"
+                  className="rounded border border-neutral-300 px-4 py-2 text-sm text-black hover:bg-neutral-50"
                 >
                   Cancel
                 </button>

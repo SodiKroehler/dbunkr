@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const stub = await provider.createStubRecord({
       slug,
       rq,
-      status: "proposed",
+      status: "biddable",
     });
     return NextResponse.json({ data: stub }, { status: 201 });
   } catch (error) {
